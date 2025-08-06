@@ -1,5 +1,6 @@
 # %%
 from enum import Enum, IntEnum, StrEnum
+from termcolor import colored
 
 BOARD_WIDTH = 9
 BOARD_HEIGHT = 10
@@ -7,9 +8,13 @@ BOARD_HEIGHT = 10
 # %%
 
 
+# 执红先行
 class ChessColor(StrEnum):
   Red = '红'
   Black = '黑'
+
+  def next(self):
+    return ChessColor.Red if self == ChessColor.Black else ChessColor.Black
 
 
 class ChessType(StrEnum):
@@ -31,15 +36,29 @@ class Chess:
     self.type = type
 
   def __str__(self):
-    return f"{self.color.value}{self.type.value}"
+    color = "red" if self.color == ChessColor.Red else "blue"
+    return colored(self.type.value, color)
 
   def __repr__(self):
-    return self.__str__()
+    return f"{self.color.value}{self.type.value}"
 
-# %%
+  def __eq__(self, other):
+    if not isinstance(other, Chess):
+      return False
+    return self.color == other.color and self.type == other.type
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
+  @classmethod
+  def from_str(cls, s: str):
+    if len(s) != 2:
+      raise ValueError(f"Invalid chess string: {s}")
+    color = ChessColor(s[0])
+    type = ChessType(s[1])
+    return cls(color, type)
 
 
-ChessType.King.value
 # %%
 
 
@@ -67,8 +86,12 @@ class Position:
   def __ne__(self, other):
     return not self.__eq__(other)
 
-  def __str__(self):
+  @property
+  def pretty(self):
     return f"{chr(ord('a') + self.col)}{chr(ord('0') + BOARD_HEIGHT - 1 - self.row)}"
+
+  def __str__(self):
+    return f"[{self.row}, {self.col}]"
 
   def __repr__(self):
     return self.__str__()
@@ -76,6 +99,8 @@ class Position:
 
 # %%
 p = Position(0, 0)
+c = ChessColor.Red
+c.next().next()
 # %%
 
 
