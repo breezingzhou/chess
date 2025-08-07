@@ -116,6 +116,10 @@ class Action:
     self.to_pos = to_pos
     self.capture = capture
 
+  def to_move(self):
+    """将动作转换为移动"""
+    return Move(self.from_pos, self.to_pos)
+
   def __str__(self):
     ext = f" (eat {self.capture})" if self.capture else ""
     return f"Action {self.chess} from {self.from_pos} to {self.to_pos}{ext}"
@@ -192,4 +196,6 @@ for row in range(BOARD_HEIGHT):
       if dest.is_valid() and src != dest:
         moves.append(Move(src, dest))
 
+
+MOVE_SIZE: int = len(moves)
 # %%

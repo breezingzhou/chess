@@ -3,7 +3,7 @@ from copy import deepcopy
 from itertools import product
 from torch import Tensor
 
-from define import Position, Chess, ChessType, ChessColor, Action, BOARD_WIDTH, BOARD_HEIGHT
+from define import Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
 # %%
 
 BOARD_INIT_GRID_STR = [
@@ -44,6 +44,24 @@ class Board:
     """设置指定位置的棋子"""
     self.grid[pos.row][pos.col] = chess
 
+  def game_end(self) -> tuple[bool, ChessColor | None]:
+    """
+    检查游戏是否结束
+    返回一个元组 (游戏结束, 胜利者)
+    """
+    red_king = any(chess for row in self.grid for chess in row if chess and chess.color ==
+                   ChessColor.Red and chess.type == ChessType.King)
+    black_king = any(chess for row in self.grid for chess in row if chess and chess.color ==
+                     ChessColor.Black and chess.type == ChessType.King)
+
+    if not red_king and not black_king:
+      return True, None  # 平局
+    elif not red_king:
+      return True, ChessColor.Black  # 黑方胜利
+    elif not black_king:
+      return True, ChessColor.Red  # 红方胜利
+    return False, None  # 游戏未结束
+
   # 当前回合所有可能的行动
   def available_actions(self) -> list[Action]:
     return []
@@ -54,6 +72,13 @@ class Board:
     self[action.from_pos] = None
     self[action.to_pos] = action.chess
     self.current_turn = self.current_turn.next()  # 切换回合
+
+  def do_move(self, move: Move):
+    """执行一个移动"""
+    chess = self[move.from_pos]
+    assert chess is not None, f"从{move.from_pos}移动时没有棋子"
+    action = Action(chess, move.from_pos, move.to_pos, self[move.to_pos])
+    self.do_action(action)
 
   # 将棋盘状态转化为深度学习网络的输入
   def to_network_input(self) -> Tensor:
