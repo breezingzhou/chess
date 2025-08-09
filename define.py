@@ -1,10 +1,16 @@
 # %%
-from enum import Enum, IntEnum, StrEnum
+# import enum
+# import aenum
+# from aenum import MultiValueEnum
+from enum import Enum, StrEnum, EnumMeta
 from termcolor import colored
+from torch import Tensor
+import torch
 
-BOARD_WIDTH = 9
 BOARD_HEIGHT = 10
+BOARD_WIDTH = 9
 
+N_FEATURES = 7  # 7种棋子
 # %%
 
 
@@ -17,14 +23,43 @@ class ChessColor(StrEnum):
     return ChessColor.Red if self == ChessColor.Black else ChessColor.Black
 
 
-class ChessType(StrEnum):
-  King = '帅'     #
-  Advisor = '士'  #
-  Bishop = '相'   #
-  Knight = '马'   #
-  Rook = '车'     #
-  Cannon = '炮'   #
-  Pawn = '兵'     #
+
+class ChessType(Enum):
+  Rook = ('车', 0, 'r')
+  Knight = ('马', 1, 'n')
+  Bishop = ('相', 2, 'b')
+  Advisor = ('士', 3, 'a')
+  King = ('帅', 4, 'k')
+  Cannon = ('炮', 5, 'c')
+  Pawn = ('兵', 6, 'p')
+
+  @property
+  def display_name(self):
+    return self.value[0]
+
+  @property
+  def tensor_index(self):
+    return self.value[1]
+
+  @property
+  def short_name(self):
+    return self.value[2]
+
+  def __str__(self):
+    return self.display_name
+
+  def to_tensor(self) -> Tensor:
+    tensor = torch.zeros(7, dtype=torch.float32)
+    tensor[self.tensor_index] = 1
+    return tensor
+
+  @classmethod
+  def _missing_(cls, value: str):
+    # 支持通过ChessType('车')/ ChessType('r')的方式访问
+    for member in cls:
+      if member.value[0] == value or member.value[2] == value:
+        return member
+    return super()._missing_(value)
 
 
 class Chess:
@@ -37,10 +72,10 @@ class Chess:
 
   def __str__(self):
     color = "red" if self.color == ChessColor.Red else "blue"
-    return colored(self.type.value, color)
+    return colored(self.type.display_name, color)
 
   def __repr__(self):
-    return f"{self.color.value}{self.type.value}"
+    return f"{self.color.value}{self.type.display_name}"
 
   def __eq__(self, other):
     if not isinstance(other, Chess):
@@ -49,6 +84,19 @@ class Chess:
 
   def __ne__(self, other):
     return not self.__eq__(other)
+
+  def to_tensor(self) -> Tensor:
+    """将棋子转换为张量表示"""
+    type_tensor = self.type.to_tensor()
+    tensor = type_tensor * (1 if self.color == ChessColor.Red else -1)
+    return tensor
+
+  def to_fen(self) -> str:
+    """将棋子转换为FEN字符串"""
+    fen = self.type.short_name
+    if self.color == ChessColor.Red:
+      fen = fen.upper()
+    return fen
 
   @classmethod
   def from_str(cls, s: str):
@@ -59,6 +107,9 @@ class Chess:
     return cls(color, type)
 
 
+# %%
+chess = Chess.from_str("黑车")
+chess.to_tensor()
 # %%
 
 

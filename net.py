@@ -33,7 +33,7 @@ class ResBlock(nn.Module):
 # %%
 
 
-class PolicyValueNet(nn.Module):
+class Net(nn.Module):
   def __init__(self, num_channels=256, num_res_blocks=1):
     super().__init__()
 
@@ -84,3 +84,25 @@ class PolicyValueNet(nn.Module):
       value = F.tanh(value)
 
       return policy_probs, value
+
+
+# %%
+import torch
+from board import Board
+from define import Move
+
+
+class PolicyValueNet():
+  def __init__(self):
+    self.policy_value_net = Net()
+    self.optimizer = torch.optim.Adam(self.policy_value_net.parameters(), lr=0.001)
+    self.loss_fn = nn.MSELoss()
+
+  def policy_value_fn(self, board: Board):
+    """
+    接收board的盘面状态，返回落子概率和盘面评估得分
+    """
+    self.policy_value_net.eval()  # 设置为评估模式
+    input_tensor = board.to_network_input()
+    policy_probs, value = self.policy_value_net(input_tensor)
+    return None
