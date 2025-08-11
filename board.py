@@ -1,8 +1,11 @@
 # %%
 from copy import deepcopy
 from itertools import product
+from pathlib import Path
 from torch import Tensor
 import torch
+from PIL import Image, ImageDraw, ImageFont
+
 from rs_chinese_chess import Board as RsBoard
 
 from define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
@@ -83,6 +86,13 @@ class Board:
       res += row_str + "/"
     return res[:-1]  # 去掉最后的斜杠
 
+  # rs engine中特殊的FEN格式
+  def to_fen_rs(self) -> str:
+    res = self._to_fen()
+    res += " "
+    res += "w" if self.current_turn == ChessColor.Red else "b"
+    return res
+
   # 将棋盘状态转化为FEN字符串
   def to_fen(self) -> str:
     res = self._to_fen()
@@ -94,12 +104,16 @@ class Board:
     # todo Board保存回合数等信息
     return res
 
+  def to_image(self) -> Image:
+    bd = BoardImageDisplay(self)
+    return bd.display()
+
   # 当前回合所有可能的行动
   def available_actions(self) -> list[Action]:
     return []
 
   def available_moves(self) -> list[Move]:
-    board = RsBoard.from_fen(self.to_fen())
+    board = RsBoard.from_fen(self.to_fen_rs())
     moves = board.generate_move()
     return [Move(Position(m.pos_from.row, m.pos_from.col), Position(m.pos_to.row, m.pos_to.col)) for m in moves]
 
@@ -154,5 +168,123 @@ print(b)
 print(b.to_fen())
 t = b.to_network_input()
 moves = b.available_moves()
+
+# %%
+
+
+class BoardImageDisplay:
+  def __init__(self, board: Board, margin: int = 20, cell_size: int = 40):
+    self.board = board
+    self.margin = margin
+    self.cell_size = cell_size
+
+    # 十字线 间隔 和 长度
+    self.crosshairs_interval = 3
+    self.crosshairs_length = 7
+
+    self.total_width = (BOARD_WIDTH - 1) * cell_size + 2 * margin
+    self.total_height = (BOARD_HEIGHT - 1) * cell_size + 2 * margin
+    # 计算边界
+    self.left = margin
+    self.right = self.total_width - margin
+    self.top = margin
+    self.bottom = self.total_height - margin
+    # 中间线
+    self.top_middle = margin + ((BOARD_HEIGHT - 1) // 2) * cell_size
+    self.bottom_middle = self.top_middle + cell_size
+    # 字体初始化
+    font_path = Path(__file__).parent / "res/simhei.ttf"
+    self.font = ImageFont.truetype(font_path, 24)
+    # 创建图像和绘图对象
+    self.img = Image.new("RGB", (self.total_width, self.total_height), (185, 102, 47))
+    self.draw = ImageDraw.Draw(self.img)
+
+  def position_to_pixel(self, pos: Position) -> tuple[int, int]:
+    """将棋盘位置转换为像素坐标"""
+    x = self.left + pos.col * self.cell_size
+    y = self.top + pos.row * self.cell_size
+    return x, y
+
+  def display(self) -> Image:
+    self.draw_board()
+    self.draw_chess()
+    return self.img
+
+  def draw_chess(self):
+    for row in range(BOARD_HEIGHT):
+      for col in range(BOARD_WIDTH):
+        chess = self.board.grid[row][col]
+        if chess:
+          # 画棋子
+          self._draw_chess(chess, Position(row, col))
+
+  def _draw_chess(self, chess: Chess, pos: Position):
+    x, y = self.position_to_pixel(pos)
+    # 绘制棋子图标或文字
+    self.draw.circle((x, y), radius=self.cell_size // 2 - 2, fill=(243, 172, 87), outline="black")
+
+    text = chess.type.display_name
+    print(text)
+
+    _, _, text_width, text_height = self.draw.textbbox((0, 0), text, font=self.font)
+
+    fill_color = "red" if chess.color == ChessColor.Red else "black"
+    self.draw.text((x - text_width // 2, y - text_height // 2),
+                   text, fill=fill_color, font=self.font)
+
+  # 画基础棋盘
+  def draw_board(self):
+    # 横线
+    for i in range(BOARD_HEIGHT):
+      y = self.margin + i * self.cell_size
+      self.draw.line([(self.left, y), (self.right, y)], fill="black", width=2)
+    # 竖线
+    self.draw.line([(self.left, self.top), (self.left, self.bottom)], fill="black", width=2)
+    self.draw.line([(self.right, self.top), (self.right, self.bottom)], fill="black", width=2)
+    for i in range(1, BOARD_WIDTH):
+      x = self.margin + i * self.cell_size
+      self.draw.line([(x, self.top), (x, self.top_middle)], fill="black", width=2)
+      self.draw.line([(x, self.bottom_middle), (x, self.bottom)], fill="black", width=2)
+    # 士的斜线
+    advisor_lines = [
+        (Position(0, 3), Position(2, 5)),
+        (Position(0, 5), Position(2, 3)),
+        (Position(9, 3), Position(7, 5)),
+        (Position(9, 5), Position(7, 3)),
+    ]
+    for pos1, pos2 in advisor_lines:
+      x1, y1 = self.position_to_pixel(pos1)
+      x2, y2 = self.position_to_pixel(pos2)
+      self.draw.line([(x1, y1), (x2, y2)], fill="black", width=2)
+    # 炮、兵初始位置的十字线
+    positions = [
+        # 炮
+        Position(2, 1), Position(2, 7), Position(7, 1), Position(7, 7),
+        # 兵
+        Position(3, 0), Position(3, 2), Position(3, 4), Position(3, 6), Position(3, 8),
+        Position(6, 0), Position(6, 2), Position(6, 4), Position(6, 6), Position(6, 8),
+    ]
+    for pos in positions:
+      x, y = self.position_to_pixel(pos)
+      for direction in [(-1, -1), (-1, 1), (1, -1), (1, 1)]:
+        dx, dy = direction
+        start_x = x + dx * self.crosshairs_interval
+        start_y = y + dy * self.crosshairs_interval
+        if start_x < self.left or start_x > self.right:
+          continue
+        self.draw.line([(start_x, start_y), (start_x, start_y + dy *
+                       self.crosshairs_length)], fill="black", width=1)
+        self.draw.line([(start_x, start_y), (start_x + dx * self.crosshairs_length, start_y)],
+                       fill="black", width=1)
+
+
+# %%
+board = Board()
+bd = BoardImageDisplay(board)
+bd.display()
+a = Action(Chess(ChessColor.Red, ChessType.Cannon), Position(7, 1), Position(7, 2))
+board.do_action(a)
+bd = BoardImageDisplay(board)
+bd.display()
 
 # %%
