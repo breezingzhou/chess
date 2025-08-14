@@ -1,20 +1,10 @@
 # %%
-from pathlib import Path
 from ipywidgets import interact, IntSlider
 from PIL import Image
 from IPython.display import display
 
 
 # %%
-image_dir = Path("C:\\Users\\breezing\\Pictures\\caiqing\\zhuzi")
-images = []
-for img_path in image_dir.glob("*.jpg"):
-  img = Image.open(img_path)
-  images.append(img)
-
-# %%
-# %%
-
 
 def show_images_in_slider(images):
   """在滑块中显示所有图片"""
@@ -41,6 +31,13 @@ def show_images_in_slider(images):
   interact(show_image, index=slider)
 
 
-show_images_in_slider(images)
+# %%
+# from pathlib import Path
 
+# image_dir = Path("C:\\Users\\breezing\\Pictures\\caiqing\\zhuzi")
+# images = []
+# for img_path in image_dir.glob("*.jpg"):
+#   img = Image.open(img_path)
+#   images.append(img)
+# show_images_in_slider(images)
 # %%
