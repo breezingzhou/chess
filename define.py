@@ -23,7 +23,6 @@ class ChessColor(StrEnum):
     return ChessColor.Red if self == ChessColor.Black else ChessColor.Black
 
 
-
 class ChessType(Enum):
   Rook = ('车', 0, 'r')
   Knight = ('马', 1, 'n')
@@ -187,6 +186,16 @@ class Move:
   def __init__(self, from_pos: Position, to_pos: Position):
     self.from_pos = from_pos
     self.to_pos = to_pos
+
+  # "7747" 表示第一步红方将棋子从77移动到74（炮二平五）
+  # 注意横纵的变化！！
+  @classmethod
+  def from_str(cls, move_str: str):
+    if len(move_str) != 4:
+      raise ValueError(f"Invalid move string: {move_str}")
+    from_pos = Position(int(move_str[1]), int(move_str[0]))
+    to_pos = Position(int(move_str[3]), int(move_str[2]))
+    return cls(from_pos, to_pos)
 
   def reverse(self):
     return Move(self.to_pos, self.from_pos)

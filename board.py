@@ -104,7 +104,7 @@ class Board:
     # todo Board保存回合数等信息
     return res
 
-  def to_image(self) -> Image:
+  def to_image(self) -> Image.Image:
     bd = BoardImageDisplay(self)
     return bd.display()
 
@@ -205,7 +205,7 @@ class BoardImageDisplay:
     y = self.top + pos.row * self.cell_size
     return x, y
 
-  def display(self) -> Image:
+  def display(self) -> Image.Image:
     self.draw_board()
     self.draw_chess()
     return self.img
@@ -220,12 +220,10 @@ class BoardImageDisplay:
 
   def _draw_chess(self, chess: Chess, pos: Position):
     x, y = self.position_to_pixel(pos)
-    # 绘制棋子图标或文字
+    # 绘制棋子图标
     self.draw.circle((x, y), radius=self.cell_size // 2 - 2, fill=(243, 172, 87), outline="black")
-
+    # 绘制棋子文字
     text = chess.type.display_name
-    print(text)
-
     _, _, text_width, text_height = self.draw.textbbox((0, 0), text, font=self.font)
 
     fill_color = "red" if chess.color == ChessColor.Red else "black"
