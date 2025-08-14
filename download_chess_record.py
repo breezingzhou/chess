@@ -96,9 +96,13 @@ def download_chess_records(records_num: int = 1000, save_epoch: int = 100) -> No
     except Exception as e:
       print(f"下载第 {chess_no} 局对局记录失败: {e}")
       continue
+
     movelist = parse_movelist(html_content)
-    if movelist:
+    if movelist and len(movelist) % 4 == 0:
       records.append((chess_no, movelist))
+    else:
+      print(f"第 {chess_no} 局对局记录格式不正确 movelist_str: {movelist}")
+      continue
     if len(records) >= save_epoch:
       append_chess_records(records)
       records = []  # 清空已保存的记录
