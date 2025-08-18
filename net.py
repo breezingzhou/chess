@@ -28,18 +28,19 @@ class ResBlock(nn.Module):
   def forward(self, x):
     y = self.conv1(x)
     y = self.conv2(y)
-    return nn.ReLU(x + y)
+    y += x
+    return nn.ReLU()(y)
 
 # %%
 
 
 class Net(nn.Module):
-  def __init__(self, num_channels=256, num_res_blocks=1):
+  def __init__(self, num_channels=256, num_res_blocks=7):
     super().__init__()
 
     # 初始化特征
     self.conv = nn.Sequential(
-        nn.Conv2d(in_channels=9, out_channels=num_channels, kernel_size=3, stride=1, padding=1),
+        nn.Conv2d(in_channels=8, out_channels=num_channels, kernel_size=3, stride=1, padding=1),
         nn.BatchNorm2d(256),
         nn.ReLU()
     )
@@ -66,24 +67,24 @@ class Net(nn.Module):
         nn.Linear(256, 1),
     )
 
-    def forward(self, x):
-      """
-      x: [batch_size, 17, BOARD_HEIGHT, BOARD_WIDTH]
-      """
-      # 公共头
-      x = self.conv(x)
-      for res_block in self.res_blocks:
-        x = res_block(x)
+  def forward(self, x):
+    """
+    x: [batch_size, 8, BOARD_HEIGHT, BOARD_WIDTH]
+    """
+    # 公共头
+    x = self.conv(x)
+    for res_block in self.res_blocks:
+      x = res_block(x)
 
-      # 策略头
-      policy_logits = self.policy_conv(x)
-      policy_probs = F.softmax(policy_logits, dim=1)
+    # 策略头
+    policy_logits = self.policy_conv(x)
+    # policy_probs = F.softmax(policy_logits, dim=1)
 
-      # 价值头
-      value = self.value_conv(x)
-      value = F.tanh(value)
+    # 价值头
+    value = self.value_conv(x)
+    # value = F.tanh(value)
 
-      return policy_probs, value
+    return policy_logits, value
 
 
 # %%

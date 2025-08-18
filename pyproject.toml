@@ -13,4 +13,19 @@ dependencies = [
     "matplotlib>=3.10.5",
     "termcolor>=3.1.0",
     "torch>=2.7.1",
+    "torchvision>=0.22.1",
 ]
+
+[tool.uv.sources]
+# https://docs.astral.sh/uv/guides/integration/pytorch/
+torch = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+    { index = "pytorch-cu126", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
