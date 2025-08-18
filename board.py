@@ -133,6 +133,7 @@ class Board:
 
   # 将棋盘状态转化为深度学习网络的输入
   def to_network_input(self) -> Tensor:
+    # TODO 增加上一个回合对手棋子的移动信息
     tensor = torch.zeros((N_FEATURES, BOARD_HEIGHT, BOARD_WIDTH), dtype=torch.float32)
     for row in range(BOARD_HEIGHT):
       for col in range(BOARD_WIDTH):

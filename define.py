@@ -121,7 +121,7 @@ class Position:
     self.col = col
 
   def flip(self):
-    """翻转位置"""
+    """旋转位置"""
     return Position(BOARD_HEIGHT - 1 - self.row, BOARD_WIDTH - 1 - self.col)
 
   def is_valid(self):
@@ -190,7 +190,7 @@ class Move:
   # "7747" 表示第一步红方将棋子从77移动到74（炮二平五）
   # 注意横纵的变化！！
   @classmethod
-  def from_str(cls, move_str: str):
+  def from_move_str(cls, move_str: str):
     if len(move_str) != 4:
       raise ValueError(f"Invalid move string: {move_str}")
     from_pos = Position(int(move_str[1]), int(move_str[0]))
@@ -202,6 +202,18 @@ class Move:
 
   def is_valid(self):
     return self.from_pos.is_valid() and self.to_pos.is_valid() and self.from_pos != self.to_pos
+
+  def __eq__(self, other):
+    if not isinstance(other, Move):
+      return False
+    return self.from_pos == other.from_pos and self.to_pos == other.to_pos
+
+  def __ne__(self, other):
+    return not self.__eq__(other)
+
+  # Move作为dict的key需要实现__hash__和__eq__方法
+  def __hash__(self):
+    return hash(self.__str__())
 
   def __str__(self):
     return f"{self.from_pos}{self.to_pos}"
@@ -236,16 +248,16 @@ bishop_moves = [
     Move(bishop_pos[6], bishop_pos[3]),
     Move(bishop_pos[6], bishop_pos[4]),
 ]
-bishop_moves = [x for move in advisor_moves for x in (
+bishop_moves = [x for move in bishop_moves for x in (
     move, Move(move.from_pos.flip(), move.to_pos.flip()))]
-bishop_moves = [x for move in advisor_moves for x in (move, move.reverse())]
+bishop_moves = [x for move in bishop_moves for x in (move, move.reverse())]
 
 # 马的移动方向
 knight_directions = [
     (-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1),
 ]
 
-moves = []
+LEGAL_MOVES: list[Move] = []
 for row in range(BOARD_HEIGHT):
   for col in range(BOARD_WIDTH):
     src = Position(row, col)
@@ -254,8 +266,25 @@ for row in range(BOARD_HEIGHT):
                    [Position(row + a, col + b) for (a, b) in knight_directions]
     for dest in destinations:
       if dest.is_valid() and src != dest:
-        moves.append(Move(src, dest))
+        LEGAL_MOVES.append(Move(src, dest))
+
+LEGAL_MOVES.extend(advisor_moves)
+LEGAL_MOVES.extend(bishop_moves)
+
+LEGAL_MOVES = sorted(LEGAL_MOVES, key=lambda x: (
+    x.from_pos.row, x.from_pos.col, x.to_pos.row, x.to_pos.col))
 
 
-MOVE_SIZE: int = len(moves)
+# %%
+MOVE_TO_INDEX: dict[Move, int] = {move: i for i, move in enumerate(LEGAL_MOVES)}
+
+MOVE_SIZE: int = len(LEGAL_MOVES)
+
+
+def move_to_index_tensor(move: Move) -> Tensor:
+  """将移动转换为索引"""
+  index = MOVE_TO_INDEX[move]
+  tensor = torch.zeros(MOVE_SIZE, dtype=torch.float32)
+  tensor[index] = 1.0
+  return tensor
 # %%
