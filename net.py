@@ -105,5 +105,5 @@ class PolicyValueNet():
     """
     self.policy_value_net.eval()  # 设置为评估模式
     input_tensor = board.to_network_input()
-    policy_probs, value = self.policy_value_net(input_tensor)
+    policy_logits, value = self.policy_value_net(input_tensor)
     return None

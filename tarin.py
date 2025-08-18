@@ -28,8 +28,8 @@ class Training(L.LightningModule):
     return value_loss
 
   # 策略损失
-  def policy_loss(self, policy_logits, policy_probs_true):
-    policy_loss = nn.CrossEntropyLoss()(policy_logits, policy_probs_true)
+  def policy_loss(self, policy_logits, policy_true):
+    policy_loss = nn.CrossEntropyLoss()(policy_logits, policy_true)
     return policy_loss
 
   # 返回loss 或者 dict中返回loss
@@ -53,28 +53,36 @@ class Training(L.LightningModule):
     return optimizer
 # %%
 
-
+# 训练数据
 states, move_probs = get_chess_train_data()
 states_tensor = torch.stack(states)
 move_probs_tensor = torch.stack(move_probs)
 train_dataset = TensorDataset(states_tensor, move_probs_tensor)
 
 # %%
+# 训练
 model = Training(Net())
-# %%
 trainer = L.Trainer(max_epochs=10)
 trainer.fit(model, train_dataloaders=DataLoader(
     train_dataset, batch_size=64, shuffle=True, num_workers=0))
 
 # %%
+# 加载已有模型
+model = Training.load_from_checkpoint("lightning_logs/version_12/checkpoints/epoch=9-step=2520.ckpt", model=Net())
+model.to('cpu')
+# %%
 from board import Board
 from define import LEGAL_MOVES
-model.eval()
 b = Board()
+
+
+# %%
+model.eval()
+
 input_tensor = b.to_network_input()
 input_tensor = input_tensor.unsqueeze(0)
-policy_probs, value = model(input_tensor)
-index = policy_probs.argmax(dim=-1)
+policy_logits, value = model(input_tensor)
+index = policy_logits.argmax(dim=-1)
 move = LEGAL_MOVES[index]
 b.do_move(move)
 b.to_image()
