@@ -1,7 +1,7 @@
 # %%
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
 
 from define import BOARD_HEIGHT, BOARD_WIDTH, MOVE_SIZE
 # %%
@@ -88,22 +88,47 @@ class Net(nn.Module):
 
 
 # %%
-import torch
-from board import Board
-from define import Move
+import lightning as L
 
 
-class PolicyValueNet():
-  def __init__(self):
-    self.policy_value_net = Net()
-    self.optimizer = torch.optim.Adam(self.policy_value_net.parameters(), lr=0.001)
-    self.loss_fn = nn.MSELoss()
+class PolicyValueNet(L.LightningModule):
+  def __init__(self, model=Net(), lr=0.001):
+    super().__init__()
+    self.model = model
+    self.learning_rate = lr
+    # self.val_metrics = {}
 
-  def policy_value_fn(self, board: Board):
-    """
-    接收board的盘面状态，返回落子概率和盘面评估得分
-    """
-    self.policy_value_net.eval()  # 设置为评估模式
-    input_tensor = board.to_network_input()
-    policy_logits, value = self.policy_value_net(input_tensor)
-    return None
+  # 输出策略分布 和 价值
+  # 策略分布未经过softmax 价值[-inf, inf]
+  def forward(self, x):
+    return self.model(x)
+
+  # 价值损失
+  def value_loss(self, value, value_true):
+    value_loss = F.mse_loss(input=value, target=value_true)
+    return value_loss
+
+  # 策略损失
+  def policy_loss(self, policy_logits, policy_true):
+    policy_loss = nn.CrossEntropyLoss()(policy_logits, policy_true)
+    return policy_loss
+
+  # 返回loss 或者 dict中返回loss
+  def training_step(self, batch):
+    # TODO add value loss
+    states, move_probs = batch
+    policy_logits, value = self.forward(states)
+    loss = self.policy_loss(policy_logits, move_probs)
+    self.log("train_loss", loss)
+    return loss
+
+  # def train_dataloader(self):
+  #   states, move_probs = get_chess_train_data()
+  #   states_tensor = torch.stack(states)
+  #   move_probs_tensor = torch.stack(move_probs)
+  #   train_dataset = TensorDataset(states_tensor, move_probs_tensor)
+  #   return DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=0)
+
+  def configure_optimizers(self):
+    optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+    return optimizer
