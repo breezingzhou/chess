@@ -1,7 +1,7 @@
 # %%
 # 加载模型自我对弈 生成对弈数据 供下一次迭代
 # 输入是当前轮次的模型  输出是当前模型下对弈的数据
-from board import Board
+from chess.board import Board
 
 
 class CollectSelfPlayData:
@@ -17,7 +17,7 @@ class CollectSelfPlayData:
 
 
 # %%
-from define import MOVE_TO_INDEX, Move
+from chess.define import MOVE_TO_INDEX, Move
 import torch.nn as nn
 import torch
 

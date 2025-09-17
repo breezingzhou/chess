@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from rs_chinese_chess import Board as RsBoard
 
-from define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
+from chess.define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
 # %%
 
 BOARD_INIT_GRID_STR = [

@@ -26,8 +26,8 @@ model = PolicyValueNet.load_from_checkpoint(
     "lightning_logs/version_12/checkpoints/epoch=9-step=2520.ckpt")
 model.to('cpu')
 # %%
-from board import Board
-from define import LEGAL_MOVES
+from chess.board import Board
+from chess.define import LEGAL_MOVES
 b = Board()
 
 

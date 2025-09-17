@@ -4,8 +4,8 @@
 
 from pathlib import Path
 
-from define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
-from board import Board
+from chess.define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
+from chess.board import Board
 # %%
 save_file = Path(__file__).parent / "res/大师对局.dat"
 
@@ -64,7 +64,7 @@ def test_replay_chess_record(movelist_str: str):
 
 
 from torch import Tensor
-from define import move_to_index_tensor
+from chess.define import move_to_index_tensor
 
 
 def generate_train_data(movelist_str: str) -> tuple[list[Tensor], list[Tensor]]:

@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from define import BOARD_HEIGHT, BOARD_WIDTH, MOVE_SIZE
+from chess.define import BOARD_HEIGHT, BOARD_WIDTH, MOVE_SIZE
 # %%
 
 
