@@ -2,20 +2,15 @@
 # 两个agent对弈 获取棋谱 胜负关系等
 from chess.board import Board
 from chess.define import ChessColor, Position, Action, Move
+from players.base_player import BasePlayer
 # %%
 
 
-class Player:
-  def __init__(self, name: str):
-    self.name = name
-
-  def get_move(self, board: Board) -> Move:
-    raise NotImplementedError
 # %%
 
 
 class Game:
-  def __init__(self, red_player: Player, black_player: Player, tie_turns: int = 150, debug: bool = False):
+  def __init__(self, red_player: BasePlayer, black_player: BasePlayer, tie_turns: int = 150, debug: bool = False):
     self.red_player = red_player
     self.black_player = black_player
     self.tie_turns = tie_turns  # 和棋的最大回合数
