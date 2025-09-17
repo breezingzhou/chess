@@ -197,6 +197,10 @@ class Move:
     to_pos = Position(int(move_str[3]), int(move_str[2]))
     return cls(from_pos, to_pos)
 
+  def to_move_str(self) -> str:
+    """将移动转换为字符串表示"""
+    return f"{self.from_pos.col}{self.from_pos.row}{self.to_pos.col}{self.to_pos.row}"
+
   def reverse(self):
     return Move(self.to_pos, self.from_pos)
 

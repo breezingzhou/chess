@@ -124,10 +124,15 @@ class Board:
     self[action.to_pos] = action.chess
     self.current_turn = self.current_turn.next()  # 切换回合
 
-  def do_move(self, move: Move):
+  def do_move(self, move: Move, check: bool = False):
     """执行一个移动"""
+    # chess = self[move.from_pos]
+    # assert chess is not None, f"从{move.from_pos}移动时没有棋子"
+    # assert chess.color == self.current_turn, f"当前是{self.current_turn}回合 不能移动{chess.color}棋子"
+    if check:
+      available_moves = self.available_moves()
+      assert move in available_moves, f"移动{move}不合法"
     chess = self[move.from_pos]
-    assert chess is not None, f"从{move.from_pos}移动时没有棋子"
     action = Action(chess, move.from_pos, move.to_pos, self[move.to_pos])
     self.do_action(action)
 
@@ -161,7 +166,9 @@ class Board:
 # %%
 b = Board()
 a = Action(Chess(ChessColor.Red, ChessType.Rook), Position(9, 0), Position(8, 0))
-
+move = Move(Position(9, 0), Position(8, 0))
+move in b.available_moves()
+#%%
 print(b)
 print(b.to_fen())
 b.do_action(a)

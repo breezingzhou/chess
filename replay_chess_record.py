@@ -70,8 +70,9 @@ from define import move_to_index_tensor
 def generate_train_data(movelist_str: str) -> tuple[list[Tensor], list[Tensor]]:
   """
   生成训练数据
-  (棋盘状态编码 落子概率 胜者)
+  (棋盘状态编码 落子概率)
   """
+  # TODO 只解析胜者或者平局的落子
 
   moves = parse_movelist_str(movelist_str)
   b = Board()
