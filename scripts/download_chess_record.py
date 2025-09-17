@@ -170,7 +170,7 @@ def download_chess_records(output_file: Path, start_chess_no: int | None = None,
 
 # %%
 # 截至2025.9.17共有 135423 局
-output_file = Path(__file__).parent / "res/大师对局.csv"
+output_file = Path(__file__).parent.parent / "res/大师对局.csv"
 records_num = 135423
 download_chess_records(output_file=output_file, records_num=records_num, save_epoch=500)
 
