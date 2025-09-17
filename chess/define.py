@@ -284,8 +284,13 @@ MOVE_TO_INDEX: dict[Move, int] = {move: i for i, move in enumerate(LEGAL_MOVES)}
 
 MOVE_SIZE: int = len(LEGAL_MOVES)
 
+# %%
+from typing import TypeAlias
 
-def move_to_index_tensor(move: Move) -> Tensor:
+MoveTensor: TypeAlias = Tensor  # shape (MOVE_SIZE,), one-hot
+StateTensor: TypeAlias = Tensor  # shape (N_FEATURES+1, BOARD_HEIGHT, BOARD_WIDTH)
+
+def move_to_index_tensor(move: Move) -> MoveTensor:
   """将移动转换为索引"""
   index = MOVE_TO_INDEX[move]
   tensor = torch.zeros(MOVE_SIZE, dtype=torch.float32)

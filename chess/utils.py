@@ -4,7 +4,7 @@ from PIL import Image
 from torch import Tensor
 
 from .board import Board
-from .define import Move, move_to_index_tensor
+from .define import Move, MoveTensor, StateTensor, move_to_index_tensor
 
 # %%
 
@@ -28,7 +28,7 @@ def generate_board_images(movelist_str) -> list[Image.Image]:
   return images
 
 
-def gen_train_data(movelist_str: str) -> tuple[list[Tensor], list[Tensor]]:
+def gen_train_data(movelist_str: str) -> tuple[list[StateTensor], list[MoveTensor]]:
   """
   生成训练数据
   (棋盘状态编码 落子概率)
@@ -70,7 +70,7 @@ def get_chess_records() -> dict[int, str]:
   return records
 
 
-def get_chess_train_data() -> tuple[list[Tensor], list[Tensor]]:
+def get_policy_train_data() -> tuple[list[StateTensor], list[MoveTensor]]:
   chess_records = get_chess_records()
   all_states = []
   all_move_probs = []

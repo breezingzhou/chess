@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 # 如果 rs_chinese_chess 与 board.py 在同一包（同一目录下的模块），使用相对导入：
 from .rs_chinese_chess import Board as RsBoard
 
-from chess.define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
+from chess.define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT, StateTensor
 # %%
 
 BOARD_INIT_GRID_STR = [
@@ -138,7 +138,7 @@ class Board:
     self.do_action(action)
 
   # 将棋盘状态转化为深度学习网络的输入
-  def to_network_input(self) -> Tensor:
+  def to_network_input(self) -> StateTensor:
     # TODO 增加上一个回合对手棋子的移动信息
     tensor = torch.zeros((N_FEATURES, BOARD_HEIGHT, BOARD_WIDTH), dtype=torch.float32)
     for row in range(BOARD_HEIGHT):
