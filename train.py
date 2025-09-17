@@ -6,7 +6,7 @@ import lightning as L
 from net import Net, PolicyValueNet
 from replay_chess_record import get_chess_train_data
 
-
+# %%
 # 训练数据
 states, move_probs = get_chess_train_data()
 states_tensor = torch.stack(states)
@@ -23,7 +23,7 @@ trainer.fit(model, train_dataloaders=DataLoader(
 # %%
 # 加载已有模型
 model = PolicyValueNet.load_from_checkpoint(
-    "lightning_logs/version_12/checkpoints/epoch=9-step=2520.ckpt", model=Net())
+    "lightning_logs/version_12/checkpoints/epoch=9-step=2520.ckpt")
 model.to('cpu')
 # %%
 from board import Board

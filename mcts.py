@@ -1,6 +1,8 @@
-"""蒙特卡洛树搜索"""
+# %%
+# 蒙特卡洛树搜索
 
 
+from typing import Union
 import numpy as np
 import copy
 
@@ -14,10 +16,12 @@ def softmax(x):
   probs /= np.sum(probs)
   return probs
 
-
+# %%
 # 定义节点
+
+
 class TreeNode():
-  _parent: "TreeNode" | None
+  _parent: Union["TreeNode", None]
   _children: dict[Move, "TreeNode"]
   _n_visits: int
   _Q: float
@@ -29,7 +33,7 @@ class TreeNode():
     每个节点跟踪其自身的Q，先验概率P及其访问次数调整的u
     """
 
-  def __init__(self, parent: "TreeNode" | None, prior_p: float):
+  def __init__(self, parent: Union["TreeNode", None], prior_p: float):
     """
     :param parent: 当前节点的父节点
     :param prior_p:  当前节点被选择的先验概率
@@ -86,8 +90,10 @@ class TreeNode():
     """检查是否是叶节点，即没有被扩展的节点"""
     return self._children == {}
 
-
+# %%
 # 蒙特卡洛搜索树
+
+
 class MCTS():
   _root: TreeNode
   _current: TreeNode
@@ -164,8 +170,10 @@ class MCTS():
   def __str__(self):
     return 'MCTS'
 
-
+# %%
 # 基于MCTS的AI玩家
+
+
 class MCTSPlayer():
   mcts: MCTS
   is_selfplay: bool
@@ -195,3 +203,17 @@ class MCTSPlayer():
       move = np.random.choice(moves, p=probs)
       # 重置根节点
       self.mcts.update_with_move(-1)
+
+
+# %%
+from net import PolicyValueNet
+from train_collect import BoardEvaluate
+import torch
+
+model = PolicyValueNet.load_from_checkpoint(
+    "lightning_logs/version_12/checkpoints/epoch=9-step=2520.ckpt")
+be = BoardEvaluate(model)
+mcts = MCTS(be.policy_value_fn)
+mcts._playout(Board())
+
+# %%

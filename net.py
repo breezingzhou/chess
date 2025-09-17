@@ -82,7 +82,7 @@ class Net(nn.Module):
 
     # 价值头
     value = self.value_conv(x)
-    # value = F.tanh(value)
+    value = F.tanh(value)
 
     return policy_logits, value
 
