@@ -6,7 +6,8 @@ from torch import Tensor
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-from rs_chinese_chess import Board as RsBoard
+# 如果 rs_chinese_chess 与 board.py 在同一包（同一目录下的模块），使用相对导入：
+from .rs_chinese_chess import Board as RsBoard
 
 from chess.define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT
 # %%

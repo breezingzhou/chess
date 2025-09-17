@@ -3,8 +3,8 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 import lightning as L
 
+from chess.utils import get_chess_train_data
 from net import Net, PolicyValueNet
-from replay_chess_record import get_chess_train_data
 
 # %%
 # 训练数据

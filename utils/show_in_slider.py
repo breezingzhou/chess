@@ -30,14 +30,4 @@ def show_images_in_slider(images):
     display(images[index])
   interact(show_image, index=slider)
 
-
-# %%
-# from pathlib import Path
-
-# image_dir = Path("C:\\Users\\breezing\\Pictures\\caiqing\\zhuzi")
-# images = []
-# for img_path in image_dir.glob("*.jpg"):
-#   img = Image.open(img_path)
-#   images.append(img)
-# show_images_in_slider(images)
 # %%
