@@ -11,9 +11,11 @@ from dataclasses import dataclass
 import polars as pl
 # %%
 
+# 东萍象棋网 对局记录
+
 
 @dataclass
-class ChessRecord:
+class DPChessRecord:
   red_player: str
   black_player: str
   type: str | None
@@ -58,7 +60,7 @@ def extract_content(text: str, pattern: re.Pattern) -> str | None:
   return None
 
 
-def parse_html(html: str) -> ChessRecord | None:
+def parse_html(html: str) -> DPChessRecord | None:
   soup = BeautifulSoup(html, 'html.parser')
   dhtmlxq_view = soup.find(id='dhtmlxq_view')
   scripts = soup.find_all('script')
@@ -71,7 +73,7 @@ def parse_html(html: str) -> ChessRecord | None:
   gametype = extract_content(dhtmlxq_view.text, GAMETYPE_PATTERN)
   movelist = parse_movelist(scripts)
   if red_player and black_player and movelist and result:
-    return ChessRecord(
+    return DPChessRecord(
         red_player=red_player,
         black_player=black_player,
         type=type_,
@@ -118,7 +120,7 @@ def get_download_start_chess_number(output_file: Path) -> int:
   return df['chess_no'].max() + 1
 
 
-def save_chess_records(records: list[ChessRecord], output_file: Path) -> None:
+def save_chess_records(records: list[DPChessRecord], output_file: Path) -> None:
   print(f"正在保存对局记录...共{len(records)}局")
   if len(records) == 0:
     return
@@ -144,7 +146,7 @@ def download_chess_records(output_file: Path, start_chess_no: int | None = None,
   client = init_httpx_client()
   if start_chess_no is None:
     start_chess_no = get_download_start_chess_number(output_file)
-  records: list[ChessRecord] = []
+  records: list[DPChessRecord] = []
   for chess_no in range(start_chess_no, start_chess_no + records_num):
     sleep(1)
     print(f"正在下载第 {chess_no} 局对局记录...")
@@ -170,9 +172,10 @@ def download_chess_records(output_file: Path, start_chess_no: int | None = None,
 
 # %%
 # 截至2025.9.17共有 135423 局
-output_file = Path(__file__).parent.parent / "res/大师对局.csv"
-records_num = 135423
-download_chess_records(output_file=output_file, records_num=records_num, save_epoch=500)
+if __name__ == "__main__":
+  output_file = Path(__file__).parent.parent / "res/大师对局.csv"
+  records_num = 135423
+  download_chess_records(output_file=output_file, records_num=records_num, save_epoch=500)
 
 
 # %%
