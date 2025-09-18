@@ -105,8 +105,8 @@ class Board:
     # todo Board保存回合数等信息
     return res
 
-  def to_image(self) -> Image.Image:
-    bd = BoardImageDisplay(self)
+  def to_image(self, last_pos: Position | None = None) -> Image.Image:
+    bd = BoardImageDisplay(self, last_pos=last_pos)
     return bd.display()
 
   # 当前回合所有可能的行动
@@ -148,7 +148,8 @@ class Board:
           tensor[:, row, col] = chess.to_tensor()
     # 添加当前回合信息
     layer = torch.ones((1, BOARD_HEIGHT, BOARD_WIDTH), dtype=torch.float32)
-    layer *= 1 if self.current_turn == ChessColor.Red else -1
+    if self.current_turn == ChessColor.Black:
+      layer *= -1
     return torch.cat((tensor, layer), dim=0)
 
   def __str__(self):
@@ -165,25 +166,13 @@ class Board:
 
 
 # %%
-b = Board()
-a = Action(Chess(ChessColor.Red, ChessType.Rook), Position(9, 0), Position(8, 0))
-move = Move(Position(9, 0), Position(8, 0))
-move in b.available_moves()
-#%%
-print(b)
-print(b.to_fen())
-b.do_action(a)
-print(b)
-print(b.to_fen())
-t = b.to_network_input()
-moves = b.available_moves()
-
-# %%
 
 
 class BoardImageDisplay:
-  def __init__(self, board: Board, margin: int = 20, cell_size: int = 40):
+  def __init__(self, board: Board, last_pos: Position | None = None, margin: int = 20, cell_size: int = 40):
     self.board = board
+    self.last_pos = last_pos
+    # 边距和格子大小
     self.margin = margin
     self.cell_size = cell_size
 
@@ -216,30 +205,47 @@ class BoardImageDisplay:
 
   def display(self) -> Image.Image:
     self.draw_board()
-    self.draw_chess()
+    self.draw_chesses()
+    self.draw_extra()
     return self.img
 
-  def draw_chess(self):
+  def draw_extra(self):
+    # 画上次移动位置的标记
+    if self.last_pos:
+      # do_move的时候已经改变过current_turn了
+      # 取相反
+      outline_color = "black" if self.board.current_turn == ChessColor.Red else "red"
+      self._draw_circle(self.last_pos, fill=None, outline=outline_color, width=3)
+
+  def draw_chesses(self):
     for row in range(BOARD_HEIGHT):
       for col in range(BOARD_WIDTH):
         chess = self.board.grid[row][col]
         if chess:
           # 画棋子
-          self._draw_chess(chess, Position(row, col))
+          self.draw_chess(chess, Position(row, col))
 
-  def _draw_chess(self, chess: Chess, pos: Position):
+  def _draw_circle(self, pos: Position, fill: ImageDraw._Ink | None, outline: ImageDraw._Ink | None, width: int = 1):
     x, y = self.position_to_pixel(pos)
-    # 绘制棋子图标
-    self.draw.circle((x, y), radius=self.cell_size // 2 - 2, fill=(243, 172, 87), outline="black")
-    # 绘制棋子文字
-    text = chess.type.display_name
-    _, _, text_width, text_height = self.draw.textbbox((0, 0), text, font=self.font)
+    self.draw.circle((x, y), radius=self.cell_size // 2 - 2,
+                     fill=fill, outline=outline, width=width)
 
-    fill_color = "red" if chess.color == ChessColor.Red else "black"
+  def _draw_text(self, pos: Position, text: str, fill: ImageDraw._Ink | None):
+    x, y = self.position_to_pixel(pos)
+    _, _, text_width, text_height = self.draw.textbbox((0, 0), text, font=self.font)
     self.draw.text((x - text_width // 2, y - text_height // 2),
-                   text, fill=fill_color, font=self.font)
+                   text, fill=fill, font=self.font)
+
+  def draw_chess(self, chess: Chess, pos: Position):
+    # x, y = self.position_to_pixel(pos)
+    # 绘制棋子图标
+    self._draw_circle(pos, fill=(243, 172, 87), outline="black")
+    # 绘制棋子文字
+    fill_color = "red" if chess.color == ChessColor.Red else "black"
+    self._draw_text(pos, chess.type.display_name, fill=fill_color)
 
   # 画基础棋盘
+
   def draw_board(self):
     # 横线
     for i in range(BOARD_HEIGHT):

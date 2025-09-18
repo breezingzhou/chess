@@ -16,13 +16,14 @@ def parse_movelist_str(movelist_str: str) -> list[Move]:
   return moves
 
 
-def generate_board_images(movelist_str) -> list[Image.Image]:
+def generate_board_images(movelist_str, show_last_pos = False) -> list[Image.Image]:
   moves = parse_movelist_str(movelist_str)
   b = Board()
   images = [b.to_image()]
   for move in moves:
     b.do_move(move)
-    img = b.to_image()
+    last_pos = move.from_pos if show_last_pos else None
+    img = b.to_image(last_pos=last_pos)
     images.append(img)
   return images
 

@@ -60,7 +60,7 @@ class ChessType(Enum):
     return self.display_name
 
   def to_tensor(self) -> Tensor:
-    tensor = torch.zeros(7, dtype=torch.float32)
+    tensor = torch.zeros(N_FEATURES, dtype=torch.float32)
     tensor[self.tensor_index] = 1
     return tensor
 

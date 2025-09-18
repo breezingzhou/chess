@@ -1,58 +1,29 @@
 # %%
-# 加载模型自我对弈 生成对弈数据 供下一次迭代
-# 输入是当前轮次的模型  输出是当前模型下对弈的数据
+# 加载模型自我对弈 生成对弈数据
+from torch import Tensor
 from chess.board import Board
 
+from chess.define import MOVE_TO_INDEX
+from chess.game import Game
+from net.policy_net import PolicyNet
+from players.policy_player import PolicyPlayer
+from pathlib import Path
+# %%
+checkpoint_dir = Path("lightning_logs/version_17/checkpoints")
+checkpoint_path = list(checkpoint_dir.iterdir())[0]
+# %%
+model = PolicyNet.load_from_checkpoint(checkpoint_path)
+red_player = PolicyPlayer("红方", model=model)
+black_player = PolicyPlayer("黑方", model=model)
+game = Game(red_player, black_player, debug=True)
+game.start_play_loop()
 
-class CollectSelfPlayData:
-  def __init__(self, model):
-    self.model = model
-
-  # 自我对弈
-  def self_play(self):
-    count = 0
-    board = Board()
-    while True:
-      count += 1
+# %%
+movelist = game.movelist
 
 
 # %%
-from chess.define import MOVE_TO_INDEX, Move
-import torch.nn as nn
-import torch
-
-
-class BoardEvaluate:
-  def __init__(self, model: nn.Module):
-    self.model = model
-    self.model.to('cpu')
-
-  def policy_value_fn(self, board: Board) -> tuple[list[tuple[Move, float]], float]:
-    self.model.eval()
-    input_tensor = board.to_network_input()
-    input_tensor = input_tensor.unsqueeze(0)
-    policy_logits, value = self.model(input_tensor)
-    # 过滤合法的操作
-    legal_moves = board.available_moves()
-    legal_moves_ids = [MOVE_TO_INDEX[m] for m in legal_moves]
-
-    legal_policy_logits = policy_logits[:, legal_moves_ids]
-    legal_policy_probs = torch.softmax(legal_policy_logits, dim=-1)
-    legal_policy_probs = legal_policy_probs.tolist()[0]
-
-    return list(zip(legal_moves, legal_policy_probs)), value.item()
-
-
-# %%
-# from mcts import MCTS, MCTSPlayer
-# from net import PolicyValueNet
-# import torch
-# model = PolicyValueNet.load_from_checkpoint(
-#     "lightning_logs/version_12/checkpoints/epoch=9-step=2520.ckpt")
-# be = BoardEvaluate(model)
-
-
-# # %%
-# mcts = MCTS(be.policy_value_fn)
-# mcts._playout(Board())
-# %%
+from chess.utils import generate_board_images
+from utils import show_images_in_slider
+images = generate_board_images(movelist, show_last_pos=True)
+show_images_in_slider(images)

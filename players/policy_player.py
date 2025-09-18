@@ -1,7 +1,7 @@
 # %%
 # 只通过策略网络来进行落子
 from torch import Tensor
-from base_player import BasePlayer
+from .base_player import BasePlayer
 from chess.board import Board
 from chess.define import LEGAL_MOVES, MOVE_TO_INDEX, Move, StateTensor
 from net.policy_net import PolicyNet
@@ -28,6 +28,6 @@ class PolicyPlayer(BasePlayer):
     legal_moves = board.available_moves()
     legal_moves_ids = [MOVE_TO_INDEX[m] for m in legal_moves]
 
-    policy_logits = policy_logits[:, legal_moves_ids]
+    policy_logits = policy_logits[legal_moves_ids]
     index = policy_logits.argmax(dim=-1)
-    return LEGAL_MOVES[index]
+    return legal_moves[index]
