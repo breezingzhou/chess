@@ -15,12 +15,24 @@ N_FEATURES = 7  # 7种棋子
 
 
 # 执红先行
-class ChessColor(StrEnum):
-  Red = '红'
-  Black = '黑'
+class ChessColor(Enum):
+  Red = ('红', 1)
+  Black = ('黑', -1)
 
   def next(self):
     return ChessColor.Red if self == ChessColor.Black else ChessColor.Black
+
+  @property
+  def number(self):
+    return self.value[1]
+
+  @classmethod
+  def _missing_(cls, value: str | int):
+    # ChessColor('红')/ ChessColor(1)的方式访问
+    for member in cls:
+      if member.value[0] == value or member.value[1] == value:
+        return member
+    return super()._missing_(value)
 
 
 class ChessType(Enum):
@@ -148,10 +160,6 @@ class Position:
 
 
 # %%
-p = Position(0, 0)
-c = ChessColor.Red
-c.next().next()
-# %%
 
 
 class Action:
@@ -227,59 +235,63 @@ class Move:
 
 
 # %%
-# 士的移动
-advisor_pos = [Position(0, 3), Position(0, 5), Position(1, 4), Position(2, 3), Position(2, 5)]
-advisor_moves = [
-    Move(advisor_pos[0], advisor_pos[2]),
-    Move(advisor_pos[1], advisor_pos[2]),
-    Move(advisor_pos[3], advisor_pos[2]),
-    Move(advisor_pos[4], advisor_pos[2]),
-]
-advisor_moves = [x for move in advisor_moves for x in (
-    move, Move(move.from_pos.flip(), move.to_pos.flip()))]
-advisor_moves = [x for move in advisor_moves for x in (move, move.reverse())]
 
-# 相的移动
-bishop_pos = [Position(0, 2), Position(0, 6), Position(2, 0), Position(2, 4),
-              Position(2, 8), Position(4, 2), Position(4, 6)]
-bishop_moves = [
-    Move(bishop_pos[0], bishop_pos[2]),
-    Move(bishop_pos[0], bishop_pos[3]),
-    Move(bishop_pos[1], bishop_pos[3]),
-    Move(bishop_pos[1], bishop_pos[4]),
-    Move(bishop_pos[5], bishop_pos[2]),
-    Move(bishop_pos[5], bishop_pos[3]),
-    Move(bishop_pos[6], bishop_pos[3]),
-    Move(bishop_pos[6], bishop_pos[4]),
-]
-bishop_moves = [x for move in bishop_moves for x in (
-    move, Move(move.from_pos.flip(), move.to_pos.flip()))]
-bishop_moves = [x for move in bishop_moves for x in (move, move.reverse())]
+def get_legal_moves() -> list[Move]:
+  # 士的移动
+  advisor_pos = [Position(0, 3), Position(0, 5), Position(1, 4), Position(2, 3), Position(2, 5)]
+  advisor_moves = [
+      Move(advisor_pos[0], advisor_pos[2]),
+      Move(advisor_pos[1], advisor_pos[2]),
+      Move(advisor_pos[3], advisor_pos[2]),
+      Move(advisor_pos[4], advisor_pos[2]),
+  ]
+  advisor_moves = [x for move in advisor_moves for x in (
+      move, Move(move.from_pos.flip(), move.to_pos.flip()))]
+  advisor_moves = [x for move in advisor_moves for x in (move, move.reverse())]
 
-# 马的移动方向
-knight_directions = [
-    (-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1),
-]
+  # 相的移动
+  bishop_pos = [Position(0, 2), Position(0, 6), Position(2, 0), Position(2, 4),
+                Position(2, 8), Position(4, 2), Position(4, 6)]
+  bishop_moves = [
+      Move(bishop_pos[0], bishop_pos[2]),
+      Move(bishop_pos[0], bishop_pos[3]),
+      Move(bishop_pos[1], bishop_pos[3]),
+      Move(bishop_pos[1], bishop_pos[4]),
+      Move(bishop_pos[5], bishop_pos[2]),
+      Move(bishop_pos[5], bishop_pos[3]),
+      Move(bishop_pos[6], bishop_pos[3]),
+      Move(bishop_pos[6], bishop_pos[4]),
+  ]
+  bishop_moves = [x for move in bishop_moves for x in (
+      move, Move(move.from_pos.flip(), move.to_pos.flip()))]
+  bishop_moves = [x for move in bishop_moves for x in (move, move.reverse())]
 
-LEGAL_MOVES: list[Move] = []
-for row in range(BOARD_HEIGHT):
-  for col in range(BOARD_WIDTH):
-    src = Position(row, col)
-    destinations = [Position(row, t) for t in range(BOARD_WIDTH)] + \
-                   [Position(t, col) for t in range(BOARD_HEIGHT)] + \
-                   [Position(row + a, col + b) for (a, b) in knight_directions]
-    for dest in destinations:
-      if dest.is_valid() and src != dest:
-        LEGAL_MOVES.append(Move(src, dest))
+  # 马的移动方向
+  knight_directions = [
+      (-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1),
+  ]
 
-LEGAL_MOVES.extend(advisor_moves)
-LEGAL_MOVES.extend(bishop_moves)
+  legal_moves: list[Move] = []
+  for row in range(BOARD_HEIGHT):
+    for col in range(BOARD_WIDTH):
+      src = Position(row, col)
+      destinations = [Position(row, t) for t in range(BOARD_WIDTH)] + \
+          [Position(t, col) for t in range(BOARD_HEIGHT)] + \
+          [Position(row + a, col + b) for (a, b) in knight_directions]
+      for dest in destinations:
+        if dest.is_valid() and src != dest:
+          legal_moves.append(Move(src, dest))
 
-LEGAL_MOVES = sorted(LEGAL_MOVES, key=lambda x: (
-    x.from_pos.row, x.from_pos.col, x.to_pos.row, x.to_pos.col))
+  legal_moves.extend(advisor_moves)
+  legal_moves.extend(bishop_moves)
+  legal_moves = sorted(legal_moves, key=lambda x: (
+      x.from_pos.row, x.from_pos.col, x.to_pos.row, x.to_pos.col))
+  return legal_moves
 
 
 # %%
+LEGAL_MOVES = get_legal_moves()
+
 MOVE_TO_INDEX: dict[Move, int] = {move: i for i, move in enumerate(LEGAL_MOVES)}
 
 MOVE_SIZE: int = len(LEGAL_MOVES)
@@ -290,6 +302,7 @@ from typing import TypeAlias
 MoveTensor: TypeAlias = Tensor  # shape (MOVE_SIZE,), one-hot
 StateTensor: TypeAlias = Tensor  # shape (N_FEATURES+1, BOARD_HEIGHT, BOARD_WIDTH)
 
+
 def move_to_index_tensor(move: Move) -> MoveTensor:
   """将移动转换为索引"""
   index = MOVE_TO_INDEX[move]
@@ -297,3 +310,36 @@ def move_to_index_tensor(move: Move) -> MoveTensor:
   tensor[index] = 1.0
   return tensor
 # %%
+
+
+from dataclasses import dataclass
+
+
+class ChessWinner(Enum):
+  Red = ('红胜', 1)
+  Black = ('黑胜', -1)
+  Draw = ('和棋', 0)
+
+  @classmethod
+  def _missing_(cls, value: str | int):
+    # ChessWinner('红胜')/ ChessWinner(1)的方式访问
+    for member in cls:
+      if member.value[0] == value or member.value[1] == value:
+        return member
+    return super()._missing_(value)
+
+  @property
+  def number(self):
+    return self.value[1]
+
+
+@dataclass
+class ChessRecord:
+  id: int
+  red_player: str
+  black_player: str
+  winner: ChessWinner
+  movelist: str
+
+#%%
+a = ChessWinner("红胜")

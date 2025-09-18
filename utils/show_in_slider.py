@@ -37,7 +37,7 @@ def show_images_in_slider(images):
 
 def test_replay_chess_record():
   chess_records = get_chess_records()
-  movelist_str = chess_records[1]
+  movelist_str = chess_records[0].movelist
   images = generate_board_images(movelist_str)
   show_images_in_slider(images)
 
