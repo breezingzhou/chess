@@ -4,12 +4,13 @@ from chess.define import Move
 
 
 class BasePlayer:
-  def __init__(self, name: str, debug: bool = False) -> None:
+  def __init__(self, name: str, evaluate: bool = False) -> None:
     self.name = name
-    self.debug = debug
+    # 是否是评估模式 评估模式下记录topk等信息
+    self.evaluate = evaluate
 
   def get_move(self, board: Board) -> Move:
     raise NotImplementedError
 
-  def log(self) -> None:
+  def log_evaluation(self) -> None:
     pass

@@ -31,6 +31,5 @@ def setup_logging(level=logging.INFO) -> None:
       datefmt='%Y-%m-%d %H:%M:%S',  # 时间格式
       handlers=[
           logging.FileHandler(log_filename, encoding='utf-8'),  # 写入文件
-          logging.StreamHandler()  # 输出到控制台
       ]
   )

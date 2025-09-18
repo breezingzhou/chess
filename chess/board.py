@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 # 如果 rs_chinese_chess 与 board.py 在同一包（同一目录下的模块），使用相对导入：
 from .rs_chinese_chess import Board as RsBoard
 
-from chess.define import N_FEATURES, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT, StateTensor
+from chess.define import N_FEATURES, ChessWinner, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT, StateTensor
 # %%
 
 BOARD_INIT_GRID_STR = [
@@ -50,7 +50,7 @@ class Board:
     """设置指定位置的棋子"""
     self.grid[pos.row][pos.col] = chess
 
-  def game_end(self) -> tuple[bool, ChessColor | None]:
+  def game_end(self) -> tuple[bool, ChessWinner]:
     """
     检查游戏是否结束
     返回一个元组 (游戏结束, 胜利者)
@@ -61,12 +61,12 @@ class Board:
                      ChessColor.Black and chess.type == ChessType.King)
 
     if not red_king and not black_king:
-      return True, None  # 平局
+      return True, ChessWinner.Draw  # 平局
     elif not red_king:
-      return True, ChessColor.Black  # 黑方胜利
+      return True, ChessWinner.Black  # 黑方胜利
     elif not black_king:
-      return True, ChessColor.Red  # 红方胜利
-    return False, None  # 游戏未结束
+      return True, ChessWinner.Red  # 红方胜利
+    return False, ChessWinner.Draw  # 游戏未结束
 
   # 只转化棋子
   def _to_fen(self) -> str:

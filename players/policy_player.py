@@ -23,14 +23,13 @@ class TopKEvaluate:
 
 
 class PolicyPlayer(BasePlayer):
-  def __init__(self, name: str, model: PolicyNet, temperature: float = 1.0, debug: bool = False) -> None:
-    super().__init__(name)
+  def __init__(self, name: str, model: PolicyNet, temperature: float = 1.0, evaluate: bool = False) -> None:
+    super().__init__(name, evaluate=evaluate)
     # 温度系数 探索 vs 利用
     # temperature = 1 正常的softmax
     # temperature 越高 越随机
     # 额外逻辑 temperature = 0 直接贪心
     self.temperature = temperature
-    self.debug = debug
     self.model = model
     self.model.to('cpu')
     # TODO 是不是在gpu上推断更快
@@ -50,7 +49,7 @@ class PolicyPlayer(BasePlayer):
     legal_moves_ids = [MOVE_TO_INDEX[m] for m in legal_moves]
     legal_policy_logits = policy_logits[legal_moves_ids]
 
-    if self.debug:
+    if self.evaluate:
       self.top_k_evaluate(legal_policy_logits, policy_logits)
 
     # 直接返回最大概率的走法
@@ -77,11 +76,11 @@ class PolicyPlayer(BasePlayer):
     if legal_max >= top10:
       self.topk.top10 += 1
 
-  def log(self) -> None:
-    if not (self.debug and self.topk.total > 0):
+  def log_evaluation(self) -> None:
+    if not (self.evaluate and self.topk.total > 0):
       return
     top1_prob = self.topk.top1 / self.topk.total
     top3_prob = self.topk.top3 / self.topk.total
     top10_prob = self.topk.top10 / self.topk.total
     logging.info(
-        f"[合法的最可能走法 在 预测走法中 排名占比] top1: {top1_prob:.4f}, top3: {top3_prob:.4f}, top10: {top10_prob:.4f}")
+        f"[最优合法走法 排名占比] [当前温度: {self.temperature}]  top1: {top1_prob:.4f}, top3: {top3_prob:.4f}, top10: {top10_prob:.4f}")
