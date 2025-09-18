@@ -10,11 +10,14 @@ from players.base_player import BasePlayer
 
 
 class Game:
-  def __init__(self, red_player: BasePlayer, black_player: BasePlayer, tie_turns: int = 150, debug: bool = False):
+  def __init__(self, red_player: BasePlayer, black_player: BasePlayer, draw_turns: int = 200, debug: bool = False):
     self.red_player = red_player
     self.black_player = black_player
-    self.tie_turns = tie_turns  # 和棋的最大回合数
+    self.draw_turns = draw_turns  # 和棋的最大回合数
     self.debug = debug
+    if debug:
+      self.red_player.debug = True
+      self.black_player.debug = True
     self.board = Board()
 
     self.movelist: str = ""
@@ -34,5 +37,9 @@ class Game:
       game_end, winner = self.board.game_end()
       if game_end:
         return winner
-      elif self.turns >= self.tie_turns:
+      elif self.turns >= self.draw_turns:
         return None  # 和棋
+
+  def log(self) -> None:
+    self.red_player.log()
+    self.black_player.log()
