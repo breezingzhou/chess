@@ -71,20 +71,3 @@ class _SelfPlayChessRecordDAL:
 
 
 # %%
-from utils.db.common import DB_MANAGER
-from chess.define import ChessWinner
-SelfPlayChessRecordDAL = _SelfPlayChessRecordDAL(DB_MANAGER)
-# SelfPlayChessRecordDAL.create_table()
-# records: list[ChessRecordData] = []
-# for i in range(1, 10):
-#   record = ChessRecordData(
-#       red_player="red",
-#       black_player="black",
-#       winner=ChessWinner(1),
-#       movelist="1111222233334444",
-#   )
-#   records.append(record)
-# SelfPlayChessRecordDAL.save_record(records[0])
-# SelfPlayChessRecordDAL.save_records(records)
-r = SelfPlayChessRecordDAL.get_record(9)
-# %%

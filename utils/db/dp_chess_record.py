@@ -86,23 +86,3 @@ class _DPChessRecordDAL:
 
 
 # %%
-def test():
-  from utils.db.common import DB_MANAGER
-  DPChessRecordDAL = _DPChessRecordDAL(DB_MANAGER)
-  DPChessRecordDAL.create_table()
-  records = []
-  for i in range(1, 10):
-    record = DPChessRecord(
-        red_player="red",
-        black_player="black",
-        type="blitz",
-        gametype="standard",
-        result="1-0",
-        movelist="1111222233334444",
-        chess_no=i,
-    )
-    records.append(record)
-  DPChessRecordDAL.save_record(records[0])
-  DPChessRecordDAL.save_records(records)
-  r = DPChessRecordDAL.get_record(9)
-# %%
