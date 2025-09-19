@@ -15,3 +15,4 @@ lightning_logs/
 logs/
 res/大师对局.csv
 *.sqlite
+res/*.csv

@@ -24,6 +24,7 @@ class _SelfPlayChessRecordDAL(BaseDAL):
     create_table_sql = """
     CREATE TABLE IF NOT EXISTS selfplay_chess_record (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      version INTEGER NOT NULL,
       red_player TEXT NOT NULL,
       black_player TEXT NOT NULL,
       winner INTEGER NOT NULL,

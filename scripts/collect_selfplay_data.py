@@ -32,11 +32,8 @@ def test():
 
 
 # %%
-def collect_selfplay_data(model: PolicyNet, num_games: int = 1000, save_epoch: int = 10):
+def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, version: int, num_games: int = 1000, draw_turns: int = 200, save_epoch: int = 10):
   records: list[ChessRecordData] = []
-  red_player = PolicyPlayer("红方", model=model, temperature=2.0)
-  black_player = PolicyPlayer("黑方", model=model, temperature=2.0)
-  draw_turns = 200
   for i in range(num_games):
     print(f"开始第 {i + 1} / {num_games} 局对弈")
     game = Game(red_player, black_player, evaluate=True)
@@ -58,6 +55,8 @@ def collect_selfplay_data(model: PolicyNet, num_games: int = 1000, save_epoch: i
 # %%
 if __name__ == "__main__":
   model = PolicyNet.load_from_checkpoint(checkpoint_path)
-  collect_selfplay_data(model, num_games=5000)
+  red_player = PolicyPlayer("红方", model=model, temperature=2.0)
+  black_player = PolicyPlayer("黑方", model=model, temperature=2.0)
+  collect_selfplay_data(red_player, black_player, num_games=5000)
 
 # %%
