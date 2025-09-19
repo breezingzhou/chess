@@ -4,7 +4,7 @@ from typing import Iterable, Optional
 from dataclasses import dataclass
 
 from chess.define import ChessRecordData, ChessWinner
-from utils.db.common import DBManager
+from utils.db.common import BaseDAL, DBManager
 # %%
 
 
@@ -14,11 +14,11 @@ class SelfPlayChessRecord(ChessRecordData):
   created_at: str
 
 
-class _SelfPlayChessRecordDAL:
+class _SelfPlayChessRecordDAL(BaseDAL):
   table_name = "selfplay_chess_record"
 
   def __init__(self, db_manager: DBManager):
-    self.db_manager = db_manager
+    super().__init__(db_manager)
 
   def create_table(self) -> None:
     create_table_sql = """

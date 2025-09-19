@@ -5,6 +5,9 @@ from utils.db.selfplay_chess_record import _SelfPlayChessRecordDAL, SelfPlayChes
 SelfPlayChessRecordDAL = _SelfPlayChessRecordDAL(DB_MANAGER)
 DPChessRecordDAL = _DPChessRecordDAL(DB_MANAGER)
 
+SelfPlayChessRecordDAL.create_table()
+DPChessRecordDAL.create_table()
+
 __all__ = [
     "SelfPlayChessRecordDAL",
     "DPChessRecordDAL",

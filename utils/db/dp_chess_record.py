@@ -2,13 +2,15 @@
 # %%
 from typing import Iterable, Optional
 from scripts.download_chess_record import DPChessRecord
-from utils.db.common import DBManager
+from utils.db.common import BaseDAL, DBManager
 # %%
 
 
-class _DPChessRecordDAL:
+class _DPChessRecordDAL(BaseDAL):
+  table_name = "dp_chess_record"
+
   def __init__(self, db_manager: DBManager):
-    self.db_manager = db_manager
+    super().__init__(db_manager)
 
   def create_table(self) -> None:
     create_table_sql = """
