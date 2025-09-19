@@ -13,6 +13,7 @@ from dataclasses import dataclass
 import logging
 
 
+@dataclass
 class TopKEvaluate:
   top1: int = 0
   top3: int = 0

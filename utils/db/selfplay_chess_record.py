@@ -1,11 +1,12 @@
-# 自我对弈记录
-# %%
+# 自我对弈记录（SQLAlchemy ORM 版本）
 from typing import Iterable, Optional
 from dataclasses import dataclass
 
+from sqlalchemy import Column, Integer, String, Text, TIMESTAMP
+from sqlalchemy.sql import func
+
 from chess.define import ChessRecordData, ChessWinner
-from utils.db.common import BaseDAL, DBManager
-# %%
+from utils.db.common import BaseDAL, BaseModel, get_session
 
 
 @dataclass
@@ -14,61 +15,47 @@ class SelfPlayChessRecord(ChessRecordData):
   created_at: str
 
 
+class SelfPlayChessRecordModel(BaseModel):
+  __tablename__ = "selfplay_chess_record"
+  id = Column(Integer, primary_key=True, autoincrement=True)
+  version = Column(Integer, nullable=False, default=0)
+  red_player = Column(String, nullable=False)
+  black_player = Column(String, nullable=False)
+  winner = Column(Integer, nullable=False)
+  movelist = Column(Text, nullable=False)
+  created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+
+
 class _SelfPlayChessRecordDAL(BaseDAL):
-  table_name = "selfplay_chess_record"
-
-  def __init__(self, db_manager: DBManager):
-    super().__init__(db_manager)
-
-  def create_table(self) -> None:
-    create_table_sql = """
-    CREATE TABLE IF NOT EXISTS selfplay_chess_record (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      version INTEGER NOT NULL,
-      red_player TEXT NOT NULL,
-      black_player TEXT NOT NULL,
-      winner INTEGER NOT NULL,
-      movelist TEXT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    """
-    with self.db_manager.connect() as cursor:
-      cursor.execute(create_table_sql)
+  def __init__(self):
+    super().__init__(SelfPlayChessRecordModel)
 
   def save_record(self, record: ChessRecordData) -> None:
     self.save_records([record])
 
   def save_records(self, records: Iterable[ChessRecordData]) -> None:
-    insert_sql = (
-        "INSERT INTO selfplay_chess_record"
-        " (red_player, black_player, movelist, winner)"
-        " VALUES (?, ?, ?, ?);"
-    )
-    to_insert = [(r.red_player, r.black_player, r.movelist, r.winner.number) for r in records]
-
-    with self.db_manager.connect() as cursor:
-      cursor.executemany(insert_sql, to_insert)
+    objs = [
+        SelfPlayChessRecordModel(
+            red_player=r.red_player,
+            black_player=r.black_player,
+            movelist=r.movelist,
+            winner=r.winner.number if hasattr(r.winner, 'number') else int(r.winner)
+        )
+        for r in records
+    ]
+    with get_session() as session:
+      session.add_all(objs)
 
   def get_record(self, id_: int) -> Optional[SelfPlayChessRecord]:
-    with self.db_manager.connect() as cursor:
-      cursor.execute(
-          "SELECT id, red_player, black_player, movelist, winner, created_at"
-          " FROM selfplay_chess_record WHERE id = ?;",
-          (id_,)
+    with get_session() as session:
+      obj = session.get(SelfPlayChessRecordModel, id_)
+      if obj is None:
+        return None
+      return SelfPlayChessRecord(
+          id=obj.id,
+          red_player=obj.red_player,
+          black_player=obj.black_player,
+          movelist=obj.movelist,
+          winner=ChessWinner(obj.winner),
+          created_at=str(obj.created_at),
       )
-      row = cursor.fetchone()
-    if not row:
-      return None
-    id_, red_player, black_player, movelist, winner, created_at = row
-
-    return SelfPlayChessRecord(
-        id=id_,
-        red_player=red_player,
-        black_player=black_player,
-        movelist=movelist,
-        winner=ChessWinner(winner),
-        created_at=created_at,
-    )
-
-
-# %%
