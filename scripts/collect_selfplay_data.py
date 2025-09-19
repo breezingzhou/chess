@@ -1,4 +1,5 @@
 # %%
+from _common import *
 # 加载模型自我对弈 生成对弈数据
 from pathlib import Path
 
@@ -37,13 +38,13 @@ def collect_selfplay_data(model: PolicyNet, num_games: int = 1000, save_epoch: i
   black_player = PolicyPlayer("黑方", model=model, temperature=2.0)
   draw_turns = 200
   for i in range(num_games):
-    print(f"开始第 {i + 1} 局对弈")
+    print(f"开始第 {i + 1} / {num_games} 局对弈")
     game = Game(red_player, black_player, evaluate=True)
 
     winner = game.start_play_loop(draw_turns)
     r = ChessRecordData(
-        red_player=red_player.name,
-        black_player=black_player.name,
+        red_player=red_player.display_name,
+        black_player=black_player.display_name,
         winner=winner,
         movelist=game.movelist
     )

@@ -23,7 +23,7 @@ class TopKEvaluate:
 
 
 class PolicyPlayer(BasePlayer):
-  def __init__(self, name: str, model: PolicyNet, temperature: float = 1.0, evaluate: bool = False) -> None:
+  def __init__(self, name: str, model: PolicyNet, temperature: float = 1.0, evaluate: bool = False, device: str = "cuda") -> None:
     super().__init__(name, evaluate=evaluate)
     # 温度系数 探索 vs 利用
     # temperature = 1 正常的softmax
@@ -31,15 +31,21 @@ class PolicyPlayer(BasePlayer):
     # 额外逻辑 temperature = 0 直接贪心
     self.temperature = temperature
     self.model = model
-    self.model.to('cpu')
+    self.device = device
+    self.model.to(device)
+    self.model.eval()
     # TODO 是不是在gpu上推断更快
     self.topk = TopKEvaluate()
 
+  @property
+  def display_name(self) -> str:
+    return f"{self.name}_t={self.temperature:.2f}"
+
   def infer(self, state: StateTensor) -> Tensor:
-    self.model.eval()
     batch = state.unsqueeze(0)
-    policy_logits: Tensor = self.model(batch)  # 获取每个走法的概率
-    return policy_logits[0]
+    batch_device = batch.to(self.device)
+    policy_logits: Tensor = self.model(batch_device)  # 获取每个走法的概率
+    return policy_logits[0].to("cpu")
 
   def get_move(self, board: Board) -> Move:
     state = board.to_network_input()
