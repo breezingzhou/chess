@@ -30,23 +30,33 @@ def test():
   show_images_in_slider(images)
 
 
-#%%
-model = PolicyNet.load_from_checkpoint(checkpoint_path)
-records: list[ChessRecordData] = []
-for i in range(2):
-  print(f"开始第 {i + 1} 局对弈")
+# %%
+def collect_selfplay_data(model: PolicyNet, num_games: int = 1000, save_epoch: int = 10):
+  records: list[ChessRecordData] = []
   red_player = PolicyPlayer("红方", model=model, temperature=2.0)
   black_player = PolicyPlayer("黑方", model=model, temperature=2.0)
-  game = Game(red_player, black_player, evaluate=True)
-  winner = game.start_play_loop()
-  r = ChessRecordData(
-      red_player=red_player.name,
-      black_player=black_player.name,
-      winner=winner,
-      movelist=game.movelist
-  )
-  records.append(r)
-SelfPlayChessRecordDAL.save_records(records)
+  draw_turns = 200
+  for i in range(num_games):
+    print(f"开始第 {i + 1} 局对弈")
+    game = Game(red_player, black_player, evaluate=True)
+
+    winner = game.start_play_loop(draw_turns)
+    r = ChessRecordData(
+        red_player=red_player.name,
+        black_player=black_player.name,
+        winner=winner,
+        movelist=game.movelist
+    )
+    records.append(r)
+    if len(records) >= save_epoch:
+      SelfPlayChessRecordDAL.save_records(records)
+      records = []  # 清空已保存的记录
+  SelfPlayChessRecordDAL.save_records(records)
+
 
 # %%
+if __name__ == "__main__":
+  model = PolicyNet.load_from_checkpoint(checkpoint_path)
+  collect_selfplay_data(model, num_games=5000)
+
 # %%
