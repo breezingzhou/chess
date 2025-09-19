@@ -334,6 +334,14 @@ class ChessWinner(Enum):
 
 
 @dataclass
+class ChessRecordData:
+  red_player: str
+  black_player: str
+  winner: ChessWinner
+  movelist: str
+
+
+@dataclass
 class ChessRecord:
   id: int
   red_player: str
@@ -341,5 +349,6 @@ class ChessRecord:
   winner: ChessWinner
   movelist: str
 
-#%%
+
+# %%
 a = ChessWinner("红胜")
