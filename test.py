@@ -1,7 +1,19 @@
 # %%
-from utils.db import DPChessRecordDAL
+from scripts.download_chess_record import DPChessRecord
+from utils.db import DPChessRecordDAL, DPChessRecordModel
+from utils.db.common import BaseModel
+# %%
+record = DPChessRecord(
+    red_player="test_red",
+    black_player="test_black",
+    type="test_type",
+    gametype="test_gametype",
+    result="1-0",
+    movelist="1. e4 e5 2. Nf3 Nc6",
+    chess_no=1
+)
+DPChessRecordDAL.save_record(record)
 # %%
 res = DPChessRecordDAL.query_by_id(1)
-res
 # %%
-DPChessRecordDAL.create_table()
+DPChessRecordDAL.query_by_id(1)

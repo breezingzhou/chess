@@ -26,7 +26,7 @@ class SelfPlayChessRecordModel(BaseModel):
   created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
 
 
-class _SelfPlayChessRecordDAL(BaseDAL):
+class _SelfPlayChessRecordDAL(BaseDAL[SelfPlayChessRecordModel]):
   def __init__(self):
     super().__init__(SelfPlayChessRecordModel)
 
@@ -39,7 +39,7 @@ class _SelfPlayChessRecordDAL(BaseDAL):
             red_player=r.red_player,
             black_player=r.black_player,
             movelist=r.movelist,
-            winner=r.winner.number if hasattr(r.winner, 'number') else int(r.winner)
+            winner=r.winner.number
         )
         for r in records
     ]
@@ -51,11 +51,13 @@ class _SelfPlayChessRecordDAL(BaseDAL):
       obj = session.get(SelfPlayChessRecordModel, id_)
       if obj is None:
         return None
-      return SelfPlayChessRecord(
-          id=obj.id,
-          red_player=obj.red_player,
-          black_player=obj.black_player,
-          movelist=obj.movelist,
+
+      record = SelfPlayChessRecord(
+          id=obj.id,  # type: ignore
+          red_player=obj.red_player,  # type: ignore
+          black_player=obj.black_player,  # type: ignore
+          movelist=obj.movelist,  # type: ignore
           winner=ChessWinner(obj.winner),
           created_at=str(obj.created_at),
       )
+      return record

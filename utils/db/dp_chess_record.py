@@ -1,5 +1,5 @@
 # 东萍网象棋对局记录（ORM 版本）
-from typing import Iterable, Optional
+from typing import Iterable, Optional, cast
 from sqlalchemy import Column, Integer, String, Text
 
 from scripts.download_chess_record import DPChessRecord
@@ -17,7 +17,7 @@ class DPChessRecordModel(BaseModel):
   movelist = Column(Text, nullable=False)
 
 
-class _DPChessRecordDAL(BaseDAL):
+class _DPChessRecordDAL(BaseDAL[DPChessRecordModel]):
   def __init__(self):
     super().__init__(DPChessRecordModel)
 
@@ -62,11 +62,11 @@ class _DPChessRecordDAL(BaseDAL):
       if obj is None:
         return None
       return DPChessRecord(
-          red_player=obj.red_player,
-          black_player=obj.black_player,
-          type=obj.type,
-          gametype=obj.gametype,
-          result=obj.result,
-          movelist=obj.movelist,
-          chess_no=obj.id,
+          red_player=obj.red_player,  # type: ignore
+          black_player=obj.black_player,  # type: ignore
+          type=obj.type,  # type: ignore
+          gametype=obj.gametype,  # type: ignore
+          result=obj.result,  # type: ignore
+          movelist=obj.movelist,  # type: ignore
+          chess_no=obj.id,  # type: ignore
       )
