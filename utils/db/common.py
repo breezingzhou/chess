@@ -8,6 +8,7 @@ from contextlib import contextmanager
 
 
 DB_PATH = WORKSPACE / "res/chess.sqlite"
+MASTER_RES_PATH = WORKSPACE / "res/大师对局.csv"
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 

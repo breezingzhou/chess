@@ -3,8 +3,8 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 import lightning as L
 
-from chess.utils import get_policy_train_data
 from net.policy_net import PolicyNet
+from utils.db.loader import get_policy_train_data
 
 # %%
 # 训练数据

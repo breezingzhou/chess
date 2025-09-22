@@ -49,51 +49,9 @@ def gen_train_data(record: ChessRecord) -> tuple[list[StateTensor], list[MoveTen
 
 
 # %%
-import polars as pl
-
-res_file = Path(__file__).parent.parent / "res/大师对局.csv"
 
 
-def get_chess_records() -> list[ChessRecord]:
-  """获取棋谱记录"""
-  if not res_file.exists():
-    print(f"File not found: {res_file}")
-    return []
-  df = pl.read_csv(res_file, schema_overrides={"movelist": pl.String})
-  records: list[ChessRecord] = []
-  for row in df.iter_rows(named=True):
-    try:
-      record = ChessRecord(
-          id=row["chess_no"],
-          red_player=row["red_player"],
-          black_player=row["black_player"],
-          winner=ChessWinner(row["result"]),
-          movelist=row["movelist"],
-      )
-      records.append(record)
-    except Exception as e:
-      print(f"Error parse chess record: {e}")
-      continue
-  return records
 
-
-def get_policy_train_data(chess_record_num: int = 1000) -> tuple[list[StateTensor], list[MoveTensor]]:
-  all_chess_records = get_chess_records()
-
-  all_states = []
-  all_move_probs = []
-
-  chess_records = all_chess_records[:chess_record_num]
-  for i, chess_record in enumerate(chess_records):
-    if i % 100 == 0:
-      print(f"Processing chess record {i}/{len(chess_records)}")
-    try:
-      states, move_probs = gen_train_data(chess_record)
-      all_states.extend(states)
-      all_move_probs.extend(move_probs)
-    except Exception as e:
-      print(f"Error generate train data in chess_no [{chess_record.id}]: {e}")
-  return all_states, all_move_probs
 
 
 # %%

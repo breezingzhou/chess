@@ -1,6 +1,7 @@
 # %%
 from _common import *
-# 加载模型自我对弈 生成对弈数据
+# 加载模型自我对弈 生成对弈数据 并保存到数据库
+# 从数据库加载对弈数据 训练模型
 from pathlib import Path
 
 from utils import show_images_in_slider, setup_logging, WORKSPACE
@@ -50,6 +51,11 @@ def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, 
       SelfPlayChessRecordDAL.save_records(records)
       records = []  # 清空已保存的记录
   SelfPlayChessRecordDAL.save_records(records)
+
+
+def selfplay_train(version: int):
+  pass
+
 
 # %%
 # epoch=46-step=49585
