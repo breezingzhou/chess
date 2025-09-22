@@ -1,7 +1,7 @@
 # 自我对弈记录（SQLAlchemy ORM 版本）
 from typing import Iterable, Optional
 from dataclasses import dataclass
-
+from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, TIMESTAMP
 from sqlalchemy.sql import func
 
@@ -11,17 +11,18 @@ from utils.db.common import BaseDAL, BaseModel, get_session
 
 @dataclass
 class SelfPlayChessRecord(ChessRecordData):
-  id: int
-  created_at: str
+  version: int
+  id: Optional[int] = None
+  created_at: Optional[str] = None
 
 
 class SelfPlayChessRecordModel(BaseModel):
   __tablename__ = "selfplay_chess_record"
   id = Column(Integer, primary_key=True, autoincrement=True)
-  version = Column(Integer, nullable=False, default=0)
   red_player = Column(String, nullable=False)
   black_player = Column(String, nullable=False)
   winner = Column(Integer, nullable=False)
+  version = Column(Integer, nullable=False)
   movelist = Column(Text, nullable=False)
   created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
 
@@ -30,16 +31,20 @@ class _SelfPlayChessRecordDAL(BaseDAL[SelfPlayChessRecordModel]):
   def __init__(self):
     super().__init__(SelfPlayChessRecordModel)
 
-  def save_record(self, record: ChessRecordData) -> None:
+  def save_record(self, record: SelfPlayChessRecord) -> None:
     self.save_records([record])
 
-  def save_records(self, records: Iterable[ChessRecordData]) -> None:
+  def save_records(self, records: Iterable[SelfPlayChessRecord]) -> None:
     objs = [
         SelfPlayChessRecordModel(
+            id=r.id,
             red_player=r.red_player,
             black_player=r.black_player,
+            winner=r.winner.number,
             movelist=r.movelist,
-            winner=r.winner.number
+            version=r.version,
+            created_at=datetime.strptime(
+                r.created_at, "%Y-%m-%d %H:%M:%S") if r.created_at else None
         )
         for r in records
     ]
@@ -58,6 +63,6 @@ class _SelfPlayChessRecordDAL(BaseDAL[SelfPlayChessRecordModel]):
           black_player=obj.black_player,  # type: ignore
           movelist=obj.movelist,  # type: ignore
           winner=ChessWinner(obj.winner),
-          created_at=str(obj.created_at),
+          version=obj.version  # type: ignore
       )
       return record

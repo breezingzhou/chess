@@ -1,5 +1,5 @@
 # %%
-from typing import Generic, Optional, TypeVar, Type
+from typing import Any, Generic, Optional, TypeVar, Type
 from utils.common import WORKSPACE
 from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -47,6 +47,24 @@ class BaseDAL(Generic[ModelType]):
       model = session.get(self.model, id_)
     return model
 
+  def _gen_order_by(self, order_by: list[Any]) -> list[Any]:
+    order_exprs = []
+    for ob in order_by:
+      if isinstance(ob, str):
+        desc = False
+        name = ob
+        if ob.startswith("-"):
+          desc = True
+          name = ob[1:]
+        if not hasattr(self.model, name):
+          continue
+        col = getattr(self.model, name)
+        order_exprs.append(col.desc() if desc else col.asc())
+      else:
+        # assume SQLAlchemy expression
+        order_exprs.append(ob)
+    return order_exprs
+
   def query(
       self,
       filters: Optional[list] = None,
@@ -74,23 +92,13 @@ class BaseDAL(Generic[ModelType]):
 
       # order_by handling: accept strings or column expressions
       if order_by:
-        order_exprs = []
-        for ob in order_by:
-          if isinstance(ob, str):
-            desc = False
-            name = ob
-            if ob.startswith("-"):
-              desc = True
-              name = ob[1:]
-            if not hasattr(self.model, name):
-              continue
-            col = getattr(self.model, name)
-            order_exprs.append(col.desc() if desc else col.asc())
-          else:
-            # assume SQLAlchemy expression
-            order_exprs.append(ob)
+        order_exprs = self._gen_order_by(order_by)
         if order_exprs:
           q = q.order_by(*order_exprs)
+      else:
+        # default ordering by id asc
+        if hasattr(self.model, "id"):
+          q = q.order_by(self.model.id.asc())  # type:ignore
 
       if offset:
         q = q.offset(offset)

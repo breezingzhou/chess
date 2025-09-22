@@ -1,15 +1,41 @@
 # 从文件或者db读取对局记录 并生成训练数据
 # %%
+from typing import Optional
 import polars as pl
 from chess import *
 from chess.utils import gen_train_data
-from utils.db.common import MASTER_RES_PATH
+from utils.db import MASTER_RES_PATH, SelfPlayChessRecordDAL, SelfPlayChessRecordModel
 
+import logging
 # %%
 
 
-def get_chess_records() -> list[ChessRecord]:
-  """获取棋谱记录"""
+def get_selfplay_chess_records(version: int) -> list[ChessRecord]:
+  # 获取自我对弈对局记录
+  # 红方是不停优化的版本
+  # 黑方是固定的弱AI
+  # 只获取指定版本 红方获胜的对局记录
+  filters = [
+      SelfPlayChessRecordModel.version == version,
+      SelfPlayChessRecordModel.winner == ChessWinner.Red.number,
+  ]
+  model_records = SelfPlayChessRecordDAL.query(
+      filters=filters)
+  res = []
+  for m in model_records:
+    record = ChessRecord(
+        id=m.id,  # type: ignore
+        red_player=m.red_player,  # type: ignore
+        black_player=m.black_player,  # type: ignore
+        movelist=m.movelist,  # type: ignore
+        winner=ChessWinner(m.winner),
+    )
+    res.append(record)
+  return res
+
+
+def get_master_chess_records() -> list[ChessRecord]:
+  # 获取大师对局记录
   if not MASTER_RES_PATH.exists():
     print(f"File not found: {MASTER_RES_PATH}")
     return []
@@ -31,20 +57,34 @@ def get_chess_records() -> list[ChessRecord]:
   return records
 
 
-def get_policy_train_data(chess_record_num: int = 1000) -> tuple[list[StateTensor], list[MoveTensor]]:
-  all_chess_records = get_chess_records()
+def get_policy_train_data(chess_record_num: Optional[int] = None, version: int = 0) -> tuple[list[StateTensor], list[MoveTensor]]:
+  # 获取策略网络训练数据
+  # version=0 表示从大师对局获取数据
+  # version>0 表示从自我对弈获取数据
+  if version == 0:
+    all_chess_records = get_master_chess_records()
+    mock_opponent = False
+  else:
+    all_chess_records = get_selfplay_chess_records(version)
+    mock_opponent = True
+  if chess_record_num and chess_record_num > 0:
+    chess_records = all_chess_records[:chess_record_num]
+  else:
+    chess_records = all_chess_records
+  chess_type_str = "大师对局" if version == 0 else f"自我对弈 v{version}"
+  logging.info(
+      f"从[{chess_type_str}]获取[{len(all_chess_records)}]条对局记录 使用其中[{len(chess_records)}]条作为训练数据")
 
   all_states = []
   all_move_probs = []
 
-  chess_records = all_chess_records[:chess_record_num]
   for i, chess_record in enumerate(chess_records):
     if i % 100 == 0:
-      print(f"Processing chess record {i}/{len(chess_records)}")
+      logging.info(f"解析对局记录 {i}/{len(chess_records)}")
     try:
-      states, move_probs = gen_train_data(chess_record)
+      states, move_probs = gen_train_data(chess_record, mock_opponent=mock_opponent)
       all_states.extend(states)
       all_move_probs.extend(move_probs)
     except Exception as e:
-      print(f"Error generate train data in chess_no [{chess_record.id}]: {e}")
+      logging.error(f"解析[{chess_type_str}]时候发生错误 id = {chess_record.id} error = {e}")
   return all_states, all_move_probs

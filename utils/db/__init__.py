@@ -1,5 +1,5 @@
 from .sqlite_to_csv import sqlite_to_csv
-from .common import DB_PATH
+from .common import DB_PATH, MASTER_RES_PATH
 from .dp_chess_record import _DPChessRecordDAL, DPChessRecordModel, DPChessRecord
 from .selfplay_chess_record import _SelfPlayChessRecordDAL, SelfPlayChessRecord, SelfPlayChessRecordModel
 

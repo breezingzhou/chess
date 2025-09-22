@@ -16,7 +16,7 @@ def parse_movelist_str(movelist_str: str) -> list[Move]:
   return moves
 
 
-def generate_board_images(movelist_str, show_last_pos = False) -> list[Image.Image]:
+def generate_board_images(movelist_str, show_last_pos=False) -> list[Image.Image]:
   moves = parse_movelist_str(movelist_str)
   b = Board()
   images = [b.to_image()]
@@ -28,7 +28,7 @@ def generate_board_images(movelist_str, show_last_pos = False) -> list[Image.Ima
   return images
 
 
-def gen_train_data(record: ChessRecord) -> tuple[list[StateTensor], list[MoveTensor]]:
+def gen_train_data(record: ChessRecord, mock_opponent: bool = False) -> tuple[list[StateTensor], list[MoveTensor]]:
   """
   生成训练数据
   (棋盘状态编码 落子概率)
@@ -44,14 +44,14 @@ def gen_train_data(record: ChessRecord) -> tuple[list[StateTensor], list[MoveTen
       # 和棋或者当前回合是胜者
       states.append(b.to_network_input())
       move_probs.append(move_to_index_tensor(move))
+      if mock_opponent:
+        states.append(b.to_network_input(mock_opponent=True))
+        move_probs.append(move_to_index_tensor(move, mock_opponent=True))
     b.do_move(move)
   return states, move_probs
 
 
 # %%
-
-
-
 
 
 # %%

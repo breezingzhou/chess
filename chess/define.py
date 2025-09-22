@@ -210,6 +210,7 @@ class Move:
     return f"{self.from_pos.col}{self.from_pos.row}{self.to_pos.col}{self.to_pos.row}"
 
   def reverse(self):
+    # 交换起始和目标位置
     return Move(self.to_pos, self.from_pos)
 
   def is_valid(self):
@@ -303,8 +304,11 @@ MoveTensor: TypeAlias = Tensor  # shape (MOVE_SIZE,), one-hot
 StateTensor: TypeAlias = Tensor  # shape (N_FEATURES+1, BOARD_HEIGHT, BOARD_WIDTH)
 
 
-def move_to_index_tensor(move: Move) -> MoveTensor:
-  """将移动转换为索引"""
+def move_to_index_tensor(move: Move, mock_opponent: bool = False) -> MoveTensor:
+  # 将移动转换为索引
+  # mock_opponent表示是否为模拟对手的移动（即翻转棋盘）
+  if mock_opponent:
+    move = Move(move.from_pos.flip(), move.to_pos.flip())
   index = MOVE_TO_INDEX[move]
   tensor = torch.zeros(MOVE_SIZE, dtype=torch.float32)
   tensor[index] = 1.0
@@ -341,6 +345,7 @@ class ChessRecordData:
   movelist: str
 
 
+# TODO delete this class
 @dataclass
 class ChessRecord:
   id: int
