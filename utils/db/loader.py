@@ -21,7 +21,7 @@ def get_selfplay_chess_records(version: int) -> list[ChessRecord]:
   ]
   model_records = SelfPlayChessRecordDAL.query(
       filters=filters)
-  res = []
+  records: list[ChessRecord] = []
   for m in model_records:
     record = ChessRecord(
         id=m.id,  # type: ignore
@@ -30,8 +30,8 @@ def get_selfplay_chess_records(version: int) -> list[ChessRecord]:
         movelist=m.movelist,  # type: ignore
         winner=ChessWinner(m.winner),
     )
-    res.append(record)
-  return res
+    records.append(record)
+  return records
 
 
 def get_master_chess_records() -> list[ChessRecord]:

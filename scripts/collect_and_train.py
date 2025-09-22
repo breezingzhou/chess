@@ -98,7 +98,9 @@ class SelfPlayTrainLoop:
     model = PolicyNet.load_from_checkpoint(path)
     return model
 
-  def _gen_enough_selfplay_data(self, train_record_limit: int = 500):
+  def _gen_enough_selfplay_data(self, train_record_limit: int = 500, num_games: int = 100):
+    # num_games 表示每次进行自我对弈的局数
+    # train_record_limit 表示需要生成多少条有效的自我对弈数据后才进行训练
     # 使用模型生成足够的自我对弈数据
     while True:
       train_records = get_selfplay_chess_records(version=self.data_version)
@@ -156,9 +158,8 @@ class SelfPlayTrainLoop:
 
 # %%
 # %%
-# %%
 if __name__ == "__main__":
   train = SelfPlayTrainLoop()
-  train.selfplay_train_loop(turns=2, train_record_limit=10, max_epochs=5)
+  train.selfplay_train_loop(turns=5, train_record_limit=500, max_epochs=100)
 
 # %%

@@ -345,15 +345,9 @@ class ChessRecordData:
   movelist: str
 
 
-# TODO delete this class
 @dataclass
-class ChessRecord:
+class ChessRecord(ChessRecordData):
   id: int
-  red_player: str
-  black_player: str
-  winner: ChessWinner
-  movelist: str
 
 
 # %%
-a = ChessWinner("红胜")
