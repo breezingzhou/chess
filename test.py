@@ -10,10 +10,9 @@ record = DPChessRecord(
     gametype="test_gametype",
     result="1-0",
     movelist="1. e4 e5 2. Nf3 Nc6",
-    chess_no=1
+    chess_no=2
 )
 DPChessRecordDAL.save_record(record)
 # %%
-res = DPChessRecordDAL.query_by_id(1)
-# %%
-DPChessRecordDAL.query_by_id(1)
+res: list[DPChessRecordModel] = DPChessRecordDAL.query(
+    [DPChessRecordModel.id.in_([1, 2, 3])], order_by=['-id'])

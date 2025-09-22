@@ -16,12 +16,6 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False}, 
 # expire_on_commit 设置为False，防止提交后对象被过期
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 
-# # TODO不知道对不对
-# BaseModelType = type(
-#     "BaseModelType",
-#     (object,),
-#     {"__table__": Table}
-# )
 BaseModel = declarative_base()
 
 
@@ -51,6 +45,60 @@ class BaseDAL(Generic[ModelType]):
     with get_session() as session:
       model = session.get(self.model, id_)
     return model
+
+  def query(
+      self,
+      filters: Optional[list] = None,
+      order_by: Optional[list] = None,
+      limit: Optional[int] = None,
+      offset: Optional[int] = None,
+  ) -> list[ModelType]:
+    """Generic query helper.
+
+    Parameters
+    - where: simple equality filters as a dict mapping column name -> value
+    - filters: a list of SQLAlchemy expressions, e.g. [Model.col > 3]
+    - order_by: list of column names (str) or SQLAlchemy column expressions. Use prefix '-' on column name for DESC.
+    - limit: max number of rows to return
+    - offset: number of rows to skip
+
+    Returns a list of model instances.
+    """
+    results: list[ModelType] = []
+    with get_session() as session:
+      q = session.query(self.model)
+      if filters:
+        # filters expected to be an iterable of SQLAlchemy binary expressions
+        q = q.filter(*filters)
+
+      # order_by handling: accept strings or column expressions
+      if order_by:
+        order_exprs = []
+        for ob in order_by:
+          if isinstance(ob, str):
+            desc = False
+            name = ob
+            if ob.startswith("-"):
+              desc = True
+              name = ob[1:]
+            if not hasattr(self.model, name):
+              continue
+            col = getattr(self.model, name)
+            order_exprs.append(col.desc() if desc else col.asc())
+          else:
+            # assume SQLAlchemy expression
+            order_exprs.append(ob)
+        if order_exprs:
+          q = q.order_by(*order_exprs)
+
+      if offset:
+        q = q.offset(offset)
+      if limit:
+        q = q.limit(limit)
+
+      results = q.all()
+
+    return results
 
   def create_table(self) -> None:
     # create via metadata
