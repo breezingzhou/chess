@@ -1,10 +1,10 @@
 # %%
 from typing import cast
+from _common import *
 from chess.define import ChessWinner
 from utils.common import WORKSPACE
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord, SelfPlayChessRecordModel
 import polars as pl
-from pathlib import Path
 # %%
 res_file = WORKSPACE / "res/selfplay_chess_record_20250920_001945.csv"
 # %%
