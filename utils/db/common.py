@@ -103,7 +103,7 @@ class BaseDAL(Generic[ModelType]):
   def create_table(self) -> None:
     # create via metadata
     with get_session() as session:
-      self.model.__table__.create(bind=session.bind)  # type:ignore
+      self.model.__table__.create(bind=session.bind, checkfirst=True)  # type:ignore
 
   def drop_table(self) -> None:
     with get_session() as session:

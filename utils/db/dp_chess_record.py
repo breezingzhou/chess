@@ -1,9 +1,22 @@
 # 东萍网象棋对局记录（ORM 版本）
+from dataclasses import dataclass
 from typing import Iterable, Optional, cast
 from sqlalchemy import Column, Integer, String, Text
 
-from scripts.download_chess_record import DPChessRecord
 from utils.db.common import BaseDAL, BaseModel, get_session
+
+# 东萍象棋网 对局记录
+
+
+@dataclass
+class DPChessRecord:
+  red_player: str
+  black_player: str
+  type: str | None
+  gametype: str | None
+  result: str
+  movelist: str
+  chess_no: int = 0
 
 
 class DPChessRecordModel(BaseModel):
@@ -22,21 +35,7 @@ class _DPChessRecordDAL(BaseDAL[DPChessRecordModel]):
     super().__init__(DPChessRecordModel)
 
   def save_record(self, record: DPChessRecord) -> None:
-    if not record.chess_no:
-      print("No chess_no provided; ignore")
-      return
-    obj = DPChessRecordModel(
-        id=int(record.chess_no),
-        red_player=record.red_player,
-        black_player=record.black_player,
-        type=record.type,
-        gametype=record.gametype,
-        result=record.result,
-        movelist=record.movelist,
-    )
-    with get_session() as session:
-      # use merge to perform insert or update by PK
-      session.merge(obj)
+    self.save_records([record])
 
   def save_records(self, records: Iterable[DPChessRecord]) -> None:
     objs = []
@@ -54,6 +53,7 @@ class _DPChessRecordDAL(BaseDAL[DPChessRecordModel]):
       ))
     with get_session() as session:
       for o in objs:
+        # insert or update by PK
         session.merge(o)
 
   def get_record(self, chess_no: int) -> Optional[DPChessRecord]:

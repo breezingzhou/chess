@@ -2,27 +2,18 @@
 # 从东萍象棋网下载棋谱
 # 棋谱movelist格式为字符串 每4个字符表示一步走法
 # 如“7747 7062” 表示第一步红方将棋子从77移动到47（炮二平五）  黑方将棋子从70移动到62（马8进7）
+from _common import *
+# %%
 from pathlib import Path
 from time import sleep
+from typing import Optional
 import httpx
 from bs4 import BeautifulSoup, Tag
 import re
 from dataclasses import dataclass
 import polars as pl
+from utils.db import DPChessRecord
 # %%
-
-# 东萍象棋网 对局记录
-
-
-@dataclass
-class DPChessRecord:
-  red_player: str
-  black_player: str
-  type: str | None
-  gametype: str | None
-  result: str
-  movelist: str
-  chess_no: int = 0
 
 
 # %%
@@ -71,7 +62,7 @@ def parse_html(html: str) -> DPChessRecord | None:
   result = extract_content(dhtmlxq_view.text, RESULT_PATTERN)
   type_ = extract_content(dhtmlxq_view.text, TYPE_PATTERN)
   gametype = extract_content(dhtmlxq_view.text, GAMETYPE_PATTERN)
-  movelist = parse_movelist(scripts)
+  movelist = parse_movelist(scripts)  # type:ignore
   if red_player and black_player and movelist and result:
     return DPChessRecord(
         red_player=red_player,
@@ -111,16 +102,19 @@ def init_httpx_client() -> httpx.Client:
 
 
 # %%
+from utils.db import DPChessRecordDAL, DPChessRecordModel
 
 
-def get_download_start_chess_number(output_file: Path) -> int:
+def get_download_start_chess_number_v1(output_file: Path) -> int:
   if not output_file.exists():
     return 1
   df = pl.read_csv(output_file, schema_overrides={"movelist": pl.String})
-  return df['chess_no'].max() + 1
+  return df['chess_no'].max() + 1  # type: ignore
+
+# 保存至 CSV 文件
 
 
-def save_chess_records(records: list[DPChessRecord], output_file: Path) -> None:
+def save_chess_records_v1(records: list[DPChessRecord], output_file: Path) -> None:
   print(f"正在保存对局记录...共{len(records)}局")
   if len(records) == 0:
     return
@@ -136,16 +130,46 @@ def save_chess_records(records: list[DPChessRecord], output_file: Path) -> None:
     df_union = df_union.unique(subset=["chess_no"])  # 去重
     df_union.sort("chess_no")
     df_union.write_csv(output_file)
+
+
+def get_download_start_chess_number_v2() -> int:
+
+  last_record = DPChessRecordDAL.query(order_by=[DPChessRecordModel.id.desc()], limit=1)
+  if not last_record:
+    return 1
+  return last_record[0].id + 1  # type: ignore
+
+# 保存至数据库
+
+
+def save_chess_records_v2(records: list[DPChessRecord]) -> None:
+  DPChessRecordDAL.save_records(records)
+
+
+def get_download_start_chess_number(output_file: Optional[Path]) -> int:
+  if output_file:
+    return get_download_start_chess_number_v1(output_file)
+  else:
+    return get_download_start_chess_number_v2()
+
+
+def save_chess_records(records: list[DPChessRecord], output_file: Optional[Path]) -> None:
+  if output_file:
+    save_chess_records_v1(records, output_file)
+  else:
+    save_chess_records_v2(records)
+
 # %%
 
 
-def download_chess_records(output_file: Path, start_chess_no: int | None = None, records_num: int = 1000, save_epoch: int = 500) -> None:
+def download_chess_records(output_file: Optional[Path] = None, start_chess_no: int | None = None, records_num: int = 1000, save_epoch: int = 500) -> None:
   # 下载指定数量的对局记录
   # records_num: 下载的对局记录数量
   # save_epoch: 每多少局保存一次记录
   client = init_httpx_client()
   if start_chess_no is None:
     start_chess_no = get_download_start_chess_number(output_file)
+  print(f"从第 {start_chess_no} 局开始下载，共下载 {records_num} 局")
   records: list[DPChessRecord] = []
   for chess_no in range(start_chess_no, start_chess_no + records_num):
     sleep(1)
@@ -169,13 +193,33 @@ def download_chess_records(output_file: Path, start_chess_no: int | None = None,
       records = []  # 清空已保存的记录
   save_chess_records(records, output_file)
 
+# %%
+# 将对局记录从 CSV 文件导入到数据库
+
+
+def translate_from_csv_to_db(output_file: Path):
+  df = pl.read_csv(output_file, schema_overrides={"movelist": pl.String})
+  records: list[DPChessRecord] = []
+  for row in df.iter_rows(named=True):
+    r = DPChessRecord(
+        chess_no=row['chess_no'],
+        red_player=row['red_player'],
+        black_player=row['black_player'],
+        type=row['type'],
+        gametype=row['gametype'],
+        result=row['result'],
+        movelist=row['movelist'],
+    )
+    records.append(r)
+  save_chess_records_v2(records)
+
 
 # %%
 # 截至2025.9.17共有 135423 局
 if __name__ == "__main__":
-  output_file = Path(__file__).parent.parent / "res/大师对局.csv"
+  output_file = WORKSPACE / "res/大师对局.csv"
   records_num = 135423
-  download_chess_records(output_file=output_file, records_num=records_num, save_epoch=500)
+  download_chess_records(records_num=2, save_epoch=500)
 
 
 # %%
