@@ -51,7 +51,8 @@ def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, 
       records = []  # 清空已保存的记录
   SelfPlayChessRecordDAL.save_records(records)
 
-
+# %%
+# epoch=46-step=49585
 # %%
 if __name__ == "__main__":
   model = PolicyNet.load_from_checkpoint(checkpoint_path)
