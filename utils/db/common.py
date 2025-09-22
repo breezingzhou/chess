@@ -109,6 +109,12 @@ class BaseDAL(Generic[ModelType]):
 
     return results
 
+  def delete_by_ids(self, ids: list[int]) -> int:
+    with get_session() as session:
+      q = session.query(self.model).filter(self.model.id.in_(ids))  # type:ignore
+      count = q.delete()
+    return count
+
   def create_table(self) -> None:
     # create via metadata
     with get_session() as session:
