@@ -2,12 +2,12 @@
 from copy import deepcopy
 from itertools import product
 from pathlib import Path
+from typing import Optional
 from torch import Tensor
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
-# 如果 rs_chinese_chess 与 board.py 在同一包（同一目录下的模块），使用相对导入：
-from .rs_chinese_chess import Board as RsBoard
+from .rs_chinese_chess import Board as RsBoard  # type: ignore
 
 from chess.define import N_FEATURES, ChessWinner, Position, Chess, ChessType, ChessColor, Action, Move, BOARD_WIDTH, BOARD_HEIGHT, StateTensor
 # %%
@@ -25,7 +25,8 @@ BOARD_INIT_GRID_STR = [
     ['红车', '红马', '红相', '红士', '红帅', '红士', '红相', '红马', '红车'],
 ]
 
-BOARD_INIT_GRID = [[None for _ in range(BOARD_WIDTH)] for _ in range(BOARD_HEIGHT)]
+BOARD_INIT_GRID: list[list[Optional[Chess]]] = [
+    [None for _ in range(BOARD_WIDTH)] for _ in range(BOARD_HEIGHT)]
 for row, col in product(range(BOARD_HEIGHT), range(BOARD_WIDTH)):
   if BOARD_INIT_GRID_STR[row] and BOARD_INIT_GRID_STR[row][col]:
     BOARD_INIT_GRID[row][col] = Chess.from_str(BOARD_INIT_GRID_STR[row][col])
@@ -134,11 +135,12 @@ class Board:
       available_moves = self.available_moves()
       assert move in available_moves, f"移动{move}不合法"
     chess = self[move.from_pos]
+    assert chess is not None, f"从{move.from_pos}移动时没有棋子"
     action = Action(chess, move.from_pos, move.to_pos, self[move.to_pos])
     self.do_action(action)
 
   # 将棋盘状态转化为深度学习网络的输入
-  def to_network_input(self) -> StateTensor:
+  def to_network_input(self, mock_opponent=False) -> StateTensor:
     # TODO 增加上一个回合对手棋子的移动信息
     tensor = torch.zeros((N_FEATURES, BOARD_HEIGHT, BOARD_WIDTH), dtype=torch.float32)
     for row in range(BOARD_HEIGHT):
@@ -150,7 +152,10 @@ class Board:
     layer = torch.ones((1, BOARD_HEIGHT, BOARD_WIDTH), dtype=torch.float32)
     if self.current_turn == ChessColor.Black:
       layer *= -1
-    return torch.cat((tensor, layer), dim=0)
+    result = torch.cat((tensor, layer), dim=0)
+    if mock_opponent:
+      result = (result.flip(1).flip(2)) * -1
+    return result
 
   def __str__(self):
     board_str = ""
@@ -292,12 +297,25 @@ class BoardImageDisplay:
 
 
 # %%
-board = Board()
-bd = BoardImageDisplay(board)
-bd.display()
-a = Action(Chess(ChessColor.Red, ChessType.Cannon), Position(7, 1), Position(7, 2))
-board.do_action(a)
-bd = BoardImageDisplay(board)
-bd.display()
+def test_mock_opponent():
+  b = Board()
+  b.do_move(Move(Position(9, 0), Position(8, 0)))
+  b.to_image()
+  # %%
+  input1 = b.to_network_input()
+  input2 = b.to_network_input(mock_opponent=True)
+  # %%
+  print(torch.all(input1[:7, BOARD_HEIGHT - 2, 0] == Chess.from_str('红车').to_tensor()))
+  print(input1[7, BOARD_HEIGHT - 2, 0].item() == ChessColor.Black.number)
+  print(torch.all(input2[:7, 1, BOARD_WIDTH - 1] == Chess.from_str('黑车').to_tensor()))
+  print(input2[7, 1, BOARD_WIDTH - 1].item() == ChessColor.Red.number)
 
-# %%
+
+def test_display():
+  board = Board()
+  bd = BoardImageDisplay(board)
+  bd.display()
+  a = Action(Chess(ChessColor.Red, ChessType.Cannon), Position(7, 1), Position(7, 2))
+  board.do_action(a)
+  bd = BoardImageDisplay(board)
+  bd.display()

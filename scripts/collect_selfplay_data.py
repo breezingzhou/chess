@@ -57,6 +57,6 @@ if __name__ == "__main__":
   model = PolicyNet.load_from_checkpoint(checkpoint_path)
   red_player = PolicyPlayer("红方", model=model, temperature=2.0)
   black_player = PolicyPlayer("黑方", model=model, temperature=2.0)
-  collect_selfplay_data(red_player, black_player, num_games=5000)
+  collect_selfplay_data(red_player, black_player, num_games=5000, version=1)
 
 # %%
