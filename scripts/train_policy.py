@@ -17,7 +17,7 @@ train_dataset = TensorDataset(states_tensor, move_probs_tensor)
 # %%
 # 训练
 model = PolicyNet()
-trainer = L.Trainer(max_epochs=100)
+trainer = L.Trainer(max_epochs=100, default_root_dir= WORKSPACE)
 trainer.fit(model, train_dataloaders=DataLoader(
     train_dataset, batch_size=256, shuffle=True, num_workers=0))
 

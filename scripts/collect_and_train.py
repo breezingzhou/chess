@@ -57,12 +57,6 @@ def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, 
 
 
 # %%
-CheckPointDir = WORKSPACE / "res/checkpoints/policy"
-# base.ckpt 是使用大师对局数据训练的模型 epoch=46-step=49585
-# 在train_policy.py中生成
-# 手动复制到 CheckPointDir 下
-
-# %%
 
 
 class SelfPlayTrainLoop:
@@ -70,7 +64,7 @@ class SelfPlayTrainLoop:
   base_model: PolicyNet
   model_version: int
 
-  def __init__(self, checkpoint_dir=CheckPointDir):
+  def __init__(self, checkpoint_dir=PolicyCheckPointDir):
     self.checkpoint_dir = checkpoint_dir
     self.base_model = PolicyNet.load_from_checkpoint(checkpoint_dir / "base.ckpt")
 
@@ -79,7 +73,7 @@ class SelfPlayTrainLoop:
     self.current_model = self._load_model(self.model_version)
 
   def _get_current_model_version(self) -> int:
-    # 遍历 CheckPointDir 下的所有模型文件 获取最大的版本号
+    # 遍历 PolicyCheckPointDir 下的所有模型文件 获取最大的版本号
     files = self.checkpoint_dir.glob("version_*.ckpt")
     versions = [int(f.stem.split("_")[1]) for f in files]
     return max(versions) if versions else 0
@@ -118,7 +112,7 @@ class SelfPlayTrainLoop:
     # 训练模型
     logging.info(f"开始训练模型 当前数据版本:{self.data_version} 共有 {len(states)} 条训练数据")
     model = self.current_model
-    trainer = L.Trainer(max_epochs=max_epochs)
+    trainer = L.Trainer(max_epochs=max_epochs, default_root_dir=WORKSPACE)
     trainer.fit(model, train_dataloaders=DataLoader(
         train_dataset, batch_size=256, shuffle=True, num_workers=0))
     # 保存最新的模型
@@ -153,7 +147,7 @@ class SelfPlayTrainLoop:
 # %%
 if __name__ == "__main__":
   setup_logging()
-  train = SelfPlayTrainLoop()
+  train = SelfPlayTrainLoop(checkpoint_dir=PolicyCheckPointDir)
   train.selfplay_train_loop(turns=5, train_record_limit=500, max_epochs=100)
 
 # %%
