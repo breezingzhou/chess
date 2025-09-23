@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, String, Text, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped
 
-from chess.define import ChessRecordData, ChessWinner
+from chess.define import ChessRecord, ChessRecordData, ChessWinner
 from utils.db.common import BaseDAL, BaseModel, get_session
 
 
@@ -27,6 +27,16 @@ class SelfPlayChessRecordModel(BaseModel):
   version: int = Column(Integer, nullable=False)  # type: ignore
   movelist: str = Column(Text, nullable=False)  # type: ignore
   created_at: str = Column(TIMESTAMP, server_default=func.current_timestamp())  # type: ignore
+
+  def to_chess_record(self) -> ChessRecord:
+    record = ChessRecord(
+        id=self.id,
+        red_player=self.red_player,
+        black_player=self.black_player,
+        movelist=self.movelist,
+        winner=ChessWinner(self.winner),
+    )
+    return record
 
 
 class _SelfPlayChessRecordDAL(BaseDAL[SelfPlayChessRecordModel]):

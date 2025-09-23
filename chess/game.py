@@ -23,7 +23,7 @@ class Game:
     self.movelist: str = ""
     self.turns: int = 1
 
-  def start_play_loop(self, draw_turns: int = 200) -> ChessWinner:
+  def _start_play_loop(self, draw_turns: int = 200) -> ChessWinner:
     # draw_turns 和棋的最大回合数
     while True:
       current_player = self.red_player if self.board.current_turn == ChessColor.Red else self.black_player
@@ -40,6 +40,14 @@ class Game:
         return winner
       elif self.turns >= draw_turns:
         return ChessWinner.Draw  # 和棋
+
+  def start_play_loop(self, draw_turns: int = 200) -> ChessWinner:
+    winner = self._start_play_loop(draw_turns)
+    if self.debug:
+      print(f"对局结束 结果: {winner} ")
+    if self.evaluate:
+      self.log_evaluation()
+    return winner
 
   def log_evaluation(self) -> None:
     self.red_player.log_evaluation()

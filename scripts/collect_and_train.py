@@ -7,7 +7,7 @@ import lightning as L
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-from utils import show_images_in_slider, setup_logging, WORKSPACE
+from utils import show_images_in_slider, setup_logging, collect_selfplay_data, WORKSPACE
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord
 from utils.db.loader import get_policy_train_data, get_selfplay_chess_records
 from chess import ChessRecordData, Game
@@ -19,41 +19,7 @@ from players.policy_player import PolicyPlayer
 # %%
 
 
-def test():
-  from chess.utils import generate_board_images
-  checkpoint_dir = WORKSPACE / "lightning_logs/version_17/checkpoints"
-  checkpoint_path = list(checkpoint_dir.iterdir())[0]
-
-  model = PolicyNet.load_from_checkpoint(checkpoint_path)
-  red_player = PolicyPlayer("红方", model=model, temperature=2.0)
-  black_player = PolicyPlayer("黑方", model=model, temperature=2.0)
-  game = Game(red_player, black_player, debug=True, evaluate=True)
-  result = game.start_play_loop()
-  game.log_evaluation()
-  movelist = game.movelist
-  images = generate_board_images(movelist, show_last_pos=True)
-  show_images_in_slider(images)
-
-
 # %%
-def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, version: int, num_games: int = 1000, draw_turns: int = 200, log_epoch: int = 10):
-  # version 表示数据版本
-  logging.info(f"开始自我对弈 对弈局数：{num_games}")
-  for i in range(num_games):
-    if i % log_epoch == 0:
-      logging.info(f"开始第 {i + 1} / {num_games} 局对弈")
-    game = Game(red_player, black_player, evaluate=True)
-
-    winner = game.start_play_loop(draw_turns)
-    r = SelfPlayChessRecord(
-        id=None,
-        red_player=red_player.display_name,
-        black_player=black_player.display_name,
-        winner=winner,
-        movelist=game.movelist,
-        version=version
-    )
-    SelfPlayChessRecordDAL.save_record(r)
 
 
 # %%
@@ -100,17 +66,17 @@ class SelfPlayTrainLoop:
 
       red_player = PolicyPlayer("红方", model=self.current_model, temperature=2.0)
       black_player = PolicyPlayer("黑方", model=self.base_model, temperature=2.0)
-      collect_selfplay_data(red_player, black_player, num_games=100,
-                            version=self.data_version, draw_turns=200, log_epoch=10)
+      collect_selfplay_data(red_player, black_player, num_games=num_games,
+                            version=self.data_version, draw_turns=200)
 
   def _train_model(self, max_epochs=100):
       # 加载最新的对弈数据
-    states, move_probs = get_policy_train_data(version=self.data_version, chess_record_num=None)
-    states_tensor = torch.stack(states)
-    move_probs_tensor = torch.stack(move_probs)
+    states_tensor, move_probs_tensor = get_policy_train_data(
+        version=self.data_version, chess_record_num=None)
+
     train_dataset = TensorDataset(states_tensor, move_probs_tensor)
     # 训练模型
-    logging.info(f"开始训练模型 当前数据版本:{self.data_version} 共有 {len(states)} 条训练数据")
+    logging.info(f"开始训练模型 当前数据版本:{self.data_version} 共有 {len(train_dataset)} 条训练数据")
     model = self.current_model
     trainer = L.Trainer(max_epochs=max_epochs, default_root_dir=WORKSPACE)
     trainer.fit(model, train_dataloaders=DataLoader(

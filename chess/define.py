@@ -345,6 +345,7 @@ class ChessRecordData:
   movelist: str
 
 
+# 统一自我对局数据与大师对局数据的结构
 @dataclass
 class ChessRecord(ChessRecordData):
   id: int

@@ -2,11 +2,15 @@
 # %%
 from typing import Optional
 import polars as pl
+import logging
+import torch
+from torch import Tensor
+
 from chess import *
-from chess.utils import gen_train_data
+from chess.utils import gen_policy_train_data, gen_value_train_data
+from utils.common import cal_log_epoch
 from utils.db import MASTER_RES_PATH, SelfPlayChessRecordDAL, SelfPlayChessRecordModel
 
-import logging
 # %%
 
 
@@ -19,18 +23,11 @@ def get_selfplay_chess_records(version: int) -> list[ChessRecord]:
       SelfPlayChessRecordModel.version == version,
       SelfPlayChessRecordModel.winner == ChessWinner.Red.number,
   ]
-  model_records = SelfPlayChessRecordDAL.query(
+  model_records: list[SelfPlayChessRecordModel] = SelfPlayChessRecordDAL.query(
       filters=filters)
   records: list[ChessRecord] = []
   for m in model_records:
-    record = ChessRecord(
-        id=m.id,  # type: ignore
-        red_player=m.red_player,  # type: ignore
-        black_player=m.black_player,  # type: ignore
-        movelist=m.movelist,  # type: ignore
-        winner=ChessWinner(m.winner),
-    )
-    records.append(record)
+    records.append(m.to_chess_record())
   return records
 
 
@@ -57,7 +54,7 @@ def get_master_chess_records() -> list[ChessRecord]:
   return records
 
 
-def get_policy_train_data(chess_record_num: Optional[int] = None, version: int = 0) -> tuple[list[StateTensor], list[MoveTensor]]:
+def get_policy_train_data(chess_record_num: Optional[int] = None, version: int = 0) -> tuple[Tensor, Tensor]:
   # 获取策略网络训练数据
   # version=0 表示从大师对局获取数据
   # version>0 表示从自我对弈获取数据
@@ -78,13 +75,57 @@ def get_policy_train_data(chess_record_num: Optional[int] = None, version: int =
   all_states = []
   all_move_probs = []
 
+  log_epoch = cal_log_epoch(len(chess_records))
   for i, chess_record in enumerate(chess_records):
-    if i % 100 == 0:
+    if i % log_epoch == 0:
       logging.info(f"解析对局记录 {i}/{len(chess_records)}")
     try:
-      states, move_probs = gen_train_data(chess_record, mock_opponent=mock_opponent)
+      states, move_probs = gen_policy_train_data(chess_record, mock_opponent=mock_opponent)
       all_states.extend(states)
       all_move_probs.extend(move_probs)
     except Exception as e:
       logging.error(f"解析[{chess_type_str}]时候发生错误 id = {chess_record.id} error = {e}")
-  return all_states, all_move_probs
+  return torch.stack(all_states), torch.stack(all_move_probs)
+
+# %%
+
+
+def get_value_train_chess_records(version: int) -> list[ChessRecord]:
+  # 获取价值网络训练的对局记录
+  assert version < 0, "特殊逻辑 version < 0 表示自我对弈生成的用于价值网络的训练数据"
+
+  filters = [
+      SelfPlayChessRecordModel.version == version,
+      SelfPlayChessRecordModel.winner != ChessWinner.Draw.number,
+  ]
+  model_records = SelfPlayChessRecordDAL.query(
+      filters=filters)
+  chess_records = [m.to_chess_record() for m in model_records]
+
+  return chess_records
+
+
+def get_value_train_data(version: int, chess_record_num: Optional[int] = None, ) -> tuple[Tensor, Tensor]:
+  assert version < 0, "特殊逻辑 version < 0 表示自我对弈生成的用于价值网络的训练数据"
+  # 获取价值网络训练数据
+  all_chess_records = get_value_train_chess_records(version)
+
+  if chess_record_num and chess_record_num > 0:
+    chess_records = all_chess_records[:chess_record_num]
+  else:
+    chess_records = all_chess_records
+
+  all_states = []
+  all_values = []
+
+  log_epoch = cal_log_epoch(len(chess_records))
+  for i, chess_record in enumerate(chess_records):
+    if i % log_epoch == 0:
+      logging.info(f"解析对局记录 {i}/{len(chess_records)}")
+    try:
+      states, values = gen_value_train_data(chess_record)
+      all_states.extend(states)
+      all_values.extend(values)
+    except Exception as e:
+      logging.error(f"解析[价值网络训练数据]时候发生错误 id = {chess_record.id} error = {e}")
+  return torch.stack(all_states), torch.tensor(all_values)

@@ -28,9 +28,9 @@ def generate_board_images(movelist_str, show_last_pos=False) -> list[Image.Image
   return images
 
 
-def gen_train_data(record: ChessRecord, mock_opponent: bool = False) -> tuple[list[StateTensor], list[MoveTensor]]:
+def gen_policy_train_data(record: ChessRecord, mock_opponent: bool = False) -> tuple[list[StateTensor], list[MoveTensor]]:
   """
-  生成训练数据
+  生成策略网络训练数据
   (棋盘状态编码 落子概率)
   """
   # TODO 只解析胜者或者平局的落子
@@ -52,7 +52,23 @@ def gen_train_data(record: ChessRecord, mock_opponent: bool = False) -> tuple[li
 
 
 # %%
-
+def gen_value_train_data(record: ChessRecord) -> tuple[list[StateTensor], list[float]]:
+  """
+  生成价值网络训练数据
+  (棋盘状态编码 棋局结果)
+  """
+  # assert record.winner != ChessWinner.Draw, "和棋不参与价值网络训练"
+  if record.winner == ChessWinner.Draw:
+    return [], []
+  moves = parse_movelist_str(record.movelist)
+  b = Board()
+  states = []
+  values = []
+  for move in moves:
+    states.append(b.to_network_input())
+    values.append(1.0 if record.winner.number == b.current_turn.number else -1.0)
+    b.do_move(move)
+  return states, values
 
 # %%
 # states, move_probs = get_policy_train_data(200)

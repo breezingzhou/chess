@@ -9,9 +9,8 @@ from utils.db.loader import get_policy_train_data
 
 # %%
 # 训练数据
-states, move_probs = get_policy_train_data(chess_record_num=5000, version=0)
-states_tensor = torch.stack(states)
-move_probs_tensor = torch.stack(move_probs)
+states_tensor, move_probs_tensor = get_policy_train_data(chess_record_num=5000, version=0)
+
 train_dataset = TensorDataset(states_tensor, move_probs_tensor)
 
 # %%
