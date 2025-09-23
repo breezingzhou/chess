@@ -8,18 +8,12 @@ import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 from utils import show_images_in_slider, setup_logging, collect_selfplay_data, WORKSPACE
+from utils.common import split_dataset
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord
 from utils.db.loader import get_policy_train_data, get_selfplay_chess_records
 from chess import ChessRecordData, Game
 from net.policy_net import PolicyNet
 from players.policy_player import PolicyPlayer
-
-# %%
-
-# %%
-
-
-# %%
 
 
 # %%
@@ -46,8 +40,9 @@ class SelfPlayTrainLoop:
 
   def _load_model(self, version: int) -> PolicyNet:
     if version == 0:
-      return PolicyNet.load_from_checkpoint(self.checkpoint_dir / "base.ckpt")
-    path = self.checkpoint_dir / f"version_{version}.ckpt"
+      path = self.checkpoint_dir / "base.ckpt"
+    else:
+      path = self.checkpoint_dir / f"version_{version}.ckpt"
     model = PolicyNet.load_from_checkpoint(path)
     return model
 
@@ -74,13 +69,19 @@ class SelfPlayTrainLoop:
     states_tensor, move_probs_tensor = get_policy_train_data(
         version=self.data_version, chess_record_num=None)
 
-    train_dataset = TensorDataset(states_tensor, move_probs_tensor)
+    full_dataset = TensorDataset(states_tensor, move_probs_tensor)
+    train_dataset, val_dataset = split_dataset(full_dataset)
+
     # 训练模型
-    logging.info(f"开始训练模型 当前数据版本:{self.data_version} 共有 {len(train_dataset)} 条训练数据")
+    logging.info(
+        f"开始训练模型 当前数据版本:{self.data_version} 共{len(full_dataset)}条数据  使用{len(train_dataset)}条训练")
     model = self.current_model
     trainer = L.Trainer(max_epochs=max_epochs, default_root_dir=WORKSPACE)
-    trainer.fit(model, train_dataloaders=DataLoader(
-        train_dataset, batch_size=256, shuffle=True, num_workers=0))
+    trainer.fit(
+        model,
+        train_dataloaders=DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=0),
+        val_dataloaders=DataLoader(val_dataset, batch_size=256, shuffle=False)
+    )
     # 保存最新的模型
     model_save_path = self.checkpoint_dir / f"version_{self.data_version}.ckpt"
     logging.info(f"训练完成 保存最新模型 保存路径:{model_save_path}")

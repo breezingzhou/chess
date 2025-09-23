@@ -60,9 +60,9 @@ class ValueNet(L.LightningModule):
     super().__init__()
     self.model = model
     self.learning_rate = lr
-    # self.val_metrics = {}
+    self.val_metrics = {}
 
-  # 输出价值 [-inf, inf]
+  # 经过F.tanh  输出价值范围 [-1, 1]
   def forward(self, x):
     return self.model(x)
 
@@ -72,14 +72,27 @@ class ValueNet(L.LightningModule):
     return value_loss
 
   # 返回loss 或者 dict中返回loss
-  def training_step(self, batch):
-    # TODO generate batch
+
+  def training_step(self, batch, *, stage="train"):
     state, value_true = batch
     value = self.forward(state)
     loss = self.value_loss(value, value_true)
-    self.log("train_loss", loss)
+    self.log(f"{stage}_loss", loss, on_epoch=True, on_step=False)
     return loss
+
+  def validation_step(self, batch):
+    return self.training_step(batch, stage="val")
 
   def configure_optimizers(self):
     optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
     return optimizer
+
+  def on_validation_epoch_end(self):
+    if self.trainer.state.fn == "fit":
+      self.val_metrics = self.trainer._logger_connector.metrics["log"]
+      self.trainer._active_loop._logged_outputs.clear()  # type: ignore[attr-defined]
+      self.trainer._active_loop._results.clear()  # type: ignore[attr-defined]
+
+  def on_train_epoch_end(self):
+    self.log_dict(self.val_metrics, on_epoch=True, on_step=False)
+    self.val_metrics.clear()

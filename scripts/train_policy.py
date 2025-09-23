@@ -5,20 +5,25 @@ from torch.utils.data import TensorDataset, DataLoader
 import lightning as L
 
 from net.policy_net import PolicyNet
+from utils.common import split_dataset
 from utils.db.loader import get_policy_train_data
 
 # %%
 # 训练数据
 states_tensor, move_probs_tensor = get_policy_train_data(chess_record_num=5000, version=0)
 
-train_dataset = TensorDataset(states_tensor, move_probs_tensor)
+full_dataset = TensorDataset(states_tensor, move_probs_tensor)
+train_dataset, val_dataset = split_dataset(full_dataset)
 
 # %%
 # 训练
 model = PolicyNet()
-trainer = L.Trainer(max_epochs=100, default_root_dir= WORKSPACE)
-trainer.fit(model, train_dataloaders=DataLoader(
-    train_dataset, batch_size=256, shuffle=True, num_workers=0))
+trainer = L.Trainer(max_epochs=100, default_root_dir=WORKSPACE)
+trainer.fit(
+    model,
+    train_dataloaders=DataLoader(train_dataset, batch_size=256, shuffle=True, num_workers=0),
+    val_dataloaders=DataLoader(val_dataset, batch_size=256, shuffle=False, num_workers=0)
+)
 
 # %%
 # 加载已有模型
