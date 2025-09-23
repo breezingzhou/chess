@@ -1,7 +1,7 @@
 # %%
 from _common import *
 # 加载模型自我对弈 生成对弈数据 并保存到数据库
-# 从数据库加载对弈数据 训练模型
+# 从数据库加载对弈数据 训练策略模型
 import logging
 import lightning as L
 import torch
@@ -15,7 +15,6 @@ from net.policy_net import PolicyNet
 from players.policy_player import PolicyPlayer
 
 # %%
-setup_logging()
 
 # %%
 
@@ -37,12 +36,11 @@ def test():
 
 
 # %%
-def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, version: int, num_games: int = 1000, draw_turns: int = 200, save_epoch: int = 10):
+def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, version: int, num_games: int = 1000, draw_turns: int = 200, log_epoch: int = 10):
   # version 表示数据版本
-  records: list[SelfPlayChessRecord] = []
-  logging.info(f"开始自我对弈 模型版本:{version - 1} 对弈局数：{num_games}")
+  logging.info(f"开始自我对弈 对弈局数：{num_games}")
   for i in range(num_games):
-    if i % save_epoch == 0:
+    if i % log_epoch == 0:
       logging.info(f"开始第 {i + 1} / {num_games} 局对弈")
     game = Game(red_player, black_player, evaluate=True)
 
@@ -55,15 +53,10 @@ def collect_selfplay_data(red_player: PolicyPlayer, black_player: PolicyPlayer, 
         movelist=game.movelist,
         version=version
     )
-    records.append(r)
-    if len(records) >= save_epoch:
-      SelfPlayChessRecordDAL.save_records(records)
-      records = []  # 清空已保存的记录
-  SelfPlayChessRecordDAL.save_records(records)
+    SelfPlayChessRecordDAL.save_record(r)
 
 
 # %%
-
 CheckPointDir = WORKSPACE / "res/checkpoints/policy"
 # base.ckpt 是使用大师对局数据训练的模型 epoch=46-step=49585
 # 在train_policy.py中生成
@@ -114,7 +107,7 @@ class SelfPlayTrainLoop:
       red_player = PolicyPlayer("红方", model=self.current_model, temperature=2.0)
       black_player = PolicyPlayer("黑方", model=self.base_model, temperature=2.0)
       collect_selfplay_data(red_player, black_player, num_games=100,
-                            version=self.data_version, draw_turns=200, save_epoch=10)
+                            version=self.data_version, draw_turns=200, log_epoch=10)
 
   def _train_model(self, max_epochs=100):
       # 加载最新的对弈数据
@@ -159,6 +152,7 @@ class SelfPlayTrainLoop:
 # %%
 # %%
 if __name__ == "__main__":
+  setup_logging()
   train = SelfPlayTrainLoop()
   train.selfplay_train_loop(turns=5, train_record_limit=500, max_epochs=100)
 

@@ -21,13 +21,13 @@ class DPChessRecord:
 
 class DPChessRecordModel(BaseModel):
   __tablename__ = "dp_chess_record"
-  id = Column(Integer, primary_key=True)
-  red_player = Column(String, nullable=False)
-  black_player = Column(String, nullable=False)
-  type = Column(String, nullable=True)
-  gametype = Column(String, nullable=True)
-  result = Column(String, nullable=False)
-  movelist = Column(Text, nullable=False)
+  id: int = Column(Integer, primary_key=True)  # type: ignore
+  red_player: str = Column(String, nullable=False)  # type: ignore
+  black_player: str = Column(String, nullable=False)  # type: ignore
+  type: Optional[str] = Column(String, nullable=True)  # type: ignore
+  gametype: Optional[str] = Column(String, nullable=True)  # type: ignore
+  result: str = Column(String, nullable=False)  # type: ignore
+  movelist: str = Column(Text, nullable=False)  # type: ignore
 
 
 class _DPChessRecordDAL(BaseDAL[DPChessRecordModel]):
@@ -62,11 +62,11 @@ class _DPChessRecordDAL(BaseDAL[DPChessRecordModel]):
       if obj is None:
         return None
       return DPChessRecord(
-          red_player=obj.red_player,  # type: ignore
-          black_player=obj.black_player,  # type: ignore
-          type=obj.type,  # type: ignore
-          gametype=obj.gametype,  # type: ignore
-          result=obj.result,  # type: ignore
-          movelist=obj.movelist,  # type: ignore
-          chess_no=obj.id,  # type: ignore
+          red_player=obj.red_player,
+          black_player=obj.black_player,
+          type=obj.type,
+          gametype=obj.gametype,
+          result=obj.result,
+          movelist=obj.movelist,
+          chess_no=obj.id,
       )

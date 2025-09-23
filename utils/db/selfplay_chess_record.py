@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from sqlalchemy import Column, Integer, String, Text, TIMESTAMP
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped
 
 from chess.define import ChessRecordData, ChessWinner
 from utils.db.common import BaseDAL, BaseModel, get_session
@@ -16,15 +17,16 @@ class SelfPlayChessRecord(ChessRecordData):
   created_at: Optional[str] = None
 
 
+# TODO use Mapped to define columns
 class SelfPlayChessRecordModel(BaseModel):
   __tablename__ = "selfplay_chess_record"
-  id = Column(Integer, primary_key=True, autoincrement=True)
-  red_player = Column(String, nullable=False)
-  black_player = Column(String, nullable=False)
-  winner = Column(Integer, nullable=False)
-  version = Column(Integer, nullable=False)
-  movelist = Column(Text, nullable=False)
-  created_at = Column(TIMESTAMP, server_default=func.current_timestamp())
+  id: int = Column(Integer, primary_key=True, autoincrement=True)  # type: ignore
+  red_player: str = Column(String, nullable=False)  # type: ignore
+  black_player: str = Column(String, nullable=False)  # type: ignore
+  winner: int = Column(Integer, nullable=False)  # type: ignore
+  version: int = Column(Integer, nullable=False)  # type: ignore
+  movelist: str = Column(Text, nullable=False)  # type: ignore
+  created_at: str = Column(TIMESTAMP, server_default=func.current_timestamp())  # type: ignore
 
 
 class _SelfPlayChessRecordDAL(BaseDAL[SelfPlayChessRecordModel]):
@@ -58,11 +60,12 @@ class _SelfPlayChessRecordDAL(BaseDAL[SelfPlayChessRecordModel]):
         return None
 
       record = SelfPlayChessRecord(
-          id=obj.id,  # type: ignore
-          red_player=obj.red_player,  # type: ignore
-          black_player=obj.black_player,  # type: ignore
-          movelist=obj.movelist,  # type: ignore
+          id=obj.id,
+          red_player=obj.red_player,
+          black_player=obj.black_player,
+          movelist=obj.movelist,
           winner=ChessWinner(obj.winner),
-          version=obj.version  # type: ignore
+          version=obj.version,
+          created_at=obj.created_at
       )
       return record
