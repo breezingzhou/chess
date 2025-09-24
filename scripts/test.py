@@ -45,10 +45,10 @@ def test_mcts():
   move, pi, root = run_mcts(b, pnet, vnet, n_simulations=50, temperature=1.0)
   print("Chosen move:", move, "sum(pi)=", float(pi.sum()))
   # 打印前若干子节点统计
-  stats = sorted([(m, c.visits, round(c.q_value, 3), round(c.prior, 3))
-                 for m, c in root.child_stats()], key=lambda x: -x[1])[:5]
+  stats = sorted([(move, node.visits, round(node.q_value(), 3), round(node.prior, 3))
+                 for move, node in root.child_stats()], key=lambda x: -x[1])[:5]
   for s in stats:
-    print("move=", s[0], "N=", s[1], "Q=", s[2], "P=", s[3])
+    print(f"move={s[0]}", f"N={s[1]}", f"Q={s[2]}", f"P={s[3]}")
 # %%
 
 

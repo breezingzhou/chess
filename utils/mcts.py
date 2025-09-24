@@ -35,6 +35,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List, Tuple
 import math
+import copy
 
 import torch
 import torch.nn.functional as F
@@ -66,22 +67,28 @@ class MCTSNode:
 
   # 展开信息
   children: Dict[Move, 'MCTSNode'] = field(default_factory=dict)
-  is_expanded: bool = False
+  expanded: bool = False             # 是否已展开
   terminal: bool = False             # 是否终局
   terminal_value: float = 0.0        # 若终局, 该局面价值(当前执子方视角)
 
-  @property
   def q_value(self) -> float:
     return 0.0 if self.visits == 0 else self.value_sum / self.visits
 
-  @property
-  def expanded(self) -> bool:
-    return self.is_expanded
+  def u_value(self, c_puct: float) -> float:
+    if self.parent is None:
+      return 0.0
+    return c_puct * self.prior * math.sqrt(self.parent.visits) / (1 + self.visits)
 
-  def value_for_backup(self) -> float:
-    if self.terminal:
-      return self.terminal_value
-    return self.q_value
+  def get_value(self, c_puct: float) -> float:
+    # PUCT: Q + U
+    return self.q_value() + self.u_value(c_puct)
+
+  def select(self, c_puct: float) -> Tuple[Move, 'MCTSNode']:
+    assert len(self.children) > 0, "无法选择子节点: 尚未展开或无合法走子"
+    return max(
+        self.children.items(),
+        key=lambda move_node: move_node[1].get_value(c_puct)
+    )
 
   def child_stats(self) -> List[Tuple[Move, 'MCTSNode']]:
     return list(self.children.items())
@@ -107,7 +114,6 @@ class MCTS:
   def search(self, board: Board, n_simulations: int, add_dirichlet: bool = True) -> MCTSNode:
     """对给定局面执行若干次模拟, 返回根节点。"""
     # 深拷贝根局面, 保证外部不被修改
-    import copy
     root_board = copy.deepcopy(board)
     root = MCTSNode(board=root_board)
     self._expand(root)
@@ -134,7 +140,7 @@ class MCTS:
       return visit_counts
 
     # τ > 0: N^{1/τ}
-    counts = torch.tensor([child.visits for _, child in moves_nodes], dtype=torch.float32)
+    counts = torch.tensor([node.visits for _, node in moves_nodes], dtype=torch.float32)
     counts = counts ** (1.0 / temperature)
     if counts.sum() > 0:
       probs = counts / counts.sum()
@@ -148,6 +154,7 @@ class MCTS:
     moves_nodes = root.child_stats()
     if temperature <= 1e-6:
       return max(moves_nodes, key=lambda kv: kv[1].visits)[0]
+    # 采样
     counts = torch.tensor([child.visits for _, child in moves_nodes], dtype=torch.float32)
     counts = counts ** (1.0 / temperature)
     probs = counts / counts.sum()
@@ -170,71 +177,53 @@ class MCTS:
     while node.expanded and not node.terminal:
       if not node.children:
         break
-      total_visits = sum(child.visits for child in node.children.values())
-      best_score = -float('inf')
-      best_child: Optional[MCTSNode] = None
-      for move, child in node.children.items():
-        ucb = self._puct_score(parent=node, child=child, total_visits=total_visits)
-        if ucb > best_score:
-          best_score = ucb
-          best_child = child
-      assert best_child is not None
-      node = best_child
+      move, node = node.select(self.c_puct)
       path.append(node)
       if node.terminal:
         break
     return node, path
 
-  def _puct_score(self, parent: MCTSNode, child: MCTSNode, total_visits: int) -> float:
-    # PUCT: Q + c*P*sqrt(sumN)/(1+N)
-    q = child.q_value
-    prior = child.prior
-    u = self.c_puct * prior * math.sqrt(max(1, total_visits)) / (1 + child.visits)
-    return q + u
-
   def _expand(self, node: MCTSNode):
-    if node.is_expanded:
+    if node.expanded:
       return
     # 终局判断
     is_end, winner = node.board.game_end()
     if is_end:
       node.terminal = True
+      node.expanded = True
+
       if winner == ChessWinner.Draw:
         node.terminal_value = 0.0
       else:
         # winner.number: Red=1, Black=-1
         # 当前执子方视角价值: 若 winner.color == current_turn => +1 否则 -1
         # winner.number 与当前 turn.number 的乘积即可
-        current_turn_number = node.board.current_turn.number
-        node.terminal_value = 1.0 if winner.number == current_turn_number else -1.0
-      node.is_expanded = True
+        current_turn = node.board.current_turn
+        node.terminal_value = 1.0 if winner.number == current_turn.number else -1.0
       return
 
     legal_moves = node.board.available_moves()
     if not legal_moves:
       # 无合法走子视为和棋
       node.terminal = True
+      node.expanded = True
       node.terminal_value = 0.0
-      node.is_expanded = True
       return
 
     # 使用策略网络获取先验
-    state = node.board.to_network_input().unsqueeze(0).to(self.device)  # [1,8,H,W]
-    with torch.no_grad():
-      policy_logits = self.policy_net(state)  # [1,MOVE_SIZE]
-    policy_probs = F.softmax(policy_logits, dim=-1).squeeze(0).cpu()  # [MOVE_SIZE]
+    policy_probs = self._policy_eval(node)
+    legal_moves_ids = [MOVE_TO_INDEX[m] for m in legal_moves]
+    legal_policy_probs = policy_probs[legal_moves_ids]
+    legal_policy_probs = legal_policy_probs / legal_policy_probs.sum()  # 归一化
 
-    # TODO check policy_probs -> legal_moves_policy_probs
-    for mv in legal_moves:
-      idx = MOVE_TO_INDEX[mv]
-      prior = float(policy_probs[idx].item())
+    for mv, prob in zip(legal_moves, legal_policy_probs):
+      prior = float(prob.item())
       # 创建子局面
-      import copy
       new_board = copy.deepcopy(node.board)
       new_board.do_move(mv)
       child = MCTSNode(board=new_board, parent=node, prior=prior, move=mv)
       node.children[mv] = child
-    node.is_expanded = True
+    node.expanded = True
 
   def _evaluate_and_expand(self, node: MCTSNode) -> float:
     # 如果已是终局 或 已扩展 (含终局), 返回价值
@@ -247,10 +236,8 @@ class MCTS:
         return node.terminal_value
 
     # 使用价值网络评估当前节点局面 视角=当前执子方
-    state = node.board.to_network_input().unsqueeze(0).to(self.device)
-    with torch.no_grad():
-      value = self.value_net(state).item()  # 已经在 [-1,1]
-    return float(value)
+    value = self._value_eval(node)
+    return value
 
   def _backup(self, path: List[MCTSNode], leaf_value: float):
     # leaf_value: 最后节点价值 (其局面当前执子方视角)
@@ -261,10 +248,23 @@ class MCTS:
       node.value_sum += value
       value = -value  # 视角转换
 
+  def _policy_eval(self, node: MCTSNode):
+    state = node.board.to_network_input().unsqueeze(0).to(self.device)  # [1,8,H,W]
+    with torch.no_grad():
+      policy_logits = self.policy_net(state)  # [1,MOVE_SIZE]
+    policy_probs = F.softmax(policy_logits, dim=-1).squeeze(0).cpu()  # [MOVE_SIZE]
+    return policy_probs
 
+  def _value_eval(self, node: MCTSNode):
+    state = node.board.to_network_input().unsqueeze(0).to(self.device)
+    with torch.no_grad():
+      value = self.value_net(state).item()  # 已经在 [-1,1]
+    return float(value)
 # -------------------------------------------------------------
 # 便捷函数
 # -------------------------------------------------------------
+
+
 def run_mcts(
         board: Board,
         policy_net: PolicyNet,
