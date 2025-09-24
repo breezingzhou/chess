@@ -32,6 +32,25 @@ def load_records_from_csv(res_file: Path) -> list[SelfPlayChessRecord]:
 
 
 # %%
-res = SelfPlayChessRecordDAL.query(filters=[SelfPlayChessRecordModel.version > 1])
-ids = [cast(int, r.id) for r in res if r.id is not None]
-count = SelfPlayChessRecordDAL.delete_by_ids(ids)
+def test_mcts():
+  from chess.board import Board
+  from net.policy_net import PolicyNet
+  from net.value_net import ValueNet
+  from utils.common import PolicyCheckPointDir, ValueCheckPointDir
+  from utils.mcts import run_mcts
+
+  b = Board()
+  pnet = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
+  vnet = ValueNet.load_from_checkpoint(ValueCheckPointDir / "version_1.ckpt")
+  move, pi, root = run_mcts(b, pnet, vnet, n_simulations=50, temperature=1.0)
+  print("Chosen move:", move, "sum(pi)=", float(pi.sum()))
+  # 打印前若干子节点统计
+  stats = sorted([(m, c.visits, round(c.q_value, 3), round(c.prior, 3))
+                 for m, c in root.child_stats()], key=lambda x: -x[1])[:5]
+  for s in stats:
+    print("move=", s[0], "N=", s[1], "Q=", s[2], "P=", s[3])
+# %%
+
+
+test_mcts()
+# %%

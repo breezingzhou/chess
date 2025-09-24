@@ -1,7 +1,7 @@
 # %%
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent.parent
+WORKSPACE: Path = Path(__file__).parent.parent
 
 CheckPointDir = WORKSPACE / "res/checkpoints"
 PolicyCheckPointDir = CheckPointDir / "policy"
