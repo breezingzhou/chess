@@ -64,10 +64,11 @@ def gen_value_train_data(record: ChessRecord) -> tuple[list[StateTensor], list[f
   b = Board()
   states = []
   values = []
-  for move in moves:
+  for i in range(len(moves) + 1):
     states.append(b.to_network_input())
     values.append(1.0 if record.winner.number == b.current_turn.number else -1.0)
-    b.do_move(move)
+    if i < len(moves):
+      b.do_move(moves[i])
   return states, values
 
 # %%

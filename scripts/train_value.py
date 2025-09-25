@@ -128,6 +128,6 @@ if __name__ == "__main__":
   # train = ValueTrain(policy_model=policy_model, model_version=model_version,
   #                    train_record_limit=2000, max_epochs=100)
   train = ValueTrain(policy_model=policy_model, model_version=model_version,
-                     train_record_limit=100, max_epochs=10)
+                     train_record_limit=3000, max_epochs=300)
   train.run()
 # %%

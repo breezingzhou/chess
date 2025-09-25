@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-from chess.define import BOARD_HEIGHT, BOARD_WIDTH, MOVE_SIZE
+from chess.define import BOARD_HEIGHT, BOARD_WIDTH, N_FEATURES
 from net.res_block import ResBlock
 # %%
 
@@ -15,7 +15,8 @@ class Net(nn.Module):
 
     # 初始化特征
     self.conv = nn.Sequential(
-        nn.Conv2d(in_channels=8, out_channels=num_channels, kernel_size=3, stride=1, padding=1),
+        nn.Conv2d(in_channels=N_FEATURES + 1, out_channels=num_channels,
+                  kernel_size=3, stride=1, padding=1),
         nn.BatchNorm2d(256),
         nn.ReLU()
     )
@@ -33,6 +34,7 @@ class Net(nn.Module):
         nn.Linear(8 * BOARD_HEIGHT * BOARD_WIDTH, 256),
         nn.ReLU(),
         nn.Linear(256, 1),
+        nn.Tanh()
     )
 
   def forward(self, x):
@@ -46,8 +48,6 @@ class Net(nn.Module):
 
     # 价值头
     value = self.value_conv(x)
-    value = F.tanh(value)
-
     return value
 
 
@@ -67,7 +67,8 @@ class ValueNet(L.LightningModule):
     return self.model(x)
 
   # 价值损失
-  def value_loss(self, value, value_true):
+  def value_loss(self, value: torch.Tensor, value_true: torch.Tensor):
+    value = value.reshape(-1)
     value_loss = F.mse_loss(input=value, target=value_true)
     return value_loss
 
