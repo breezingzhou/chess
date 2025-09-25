@@ -1,10 +1,18 @@
 # %%
 from typing import cast
 from _common import *
-from chess.define import ChessWinner
+from chess import ChessWinner, Game
+from chess.board import Board
+from chess.utils import gen_value_train_data, generate_board_images
 from utils.common import WORKSPACE
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord, SelfPlayChessRecordModel
 import polars as pl
+
+from net.policy_net import PolicyNet
+from net.value_net import ValueNet
+from utils.common import PolicyCheckPointDir, ValueCheckPointDir
+from utils.mcts import MCTS
+
 # %%
 res_file = WORKSPACE / "res/selfplay_chess_record_20250920_001945.csv"
 # %%
@@ -36,7 +44,6 @@ def test_mcts():
   from chess.board import Board
   from net.policy_net import PolicyNet
   from net.value_net import ValueNet
-  from utils.common import PolicyCheckPointDir, ValueCheckPointDir
   from utils.mcts import run_mcts
 
   b = Board()
@@ -49,8 +56,58 @@ def test_mcts():
                  for move, node in root.child_stats()], key=lambda x: -x[1])[:5]
   for s in stats:
     print(f"move={s[0]}", f"N={s[1]}", f"Q={s[2]}", f"P={s[3]}")
+
+
 # %%
+def test_gen_value_train_data():
+  filters = [
+      SelfPlayChessRecordModel.version == -1,
+      SelfPlayChessRecordModel.winner != ChessWinner.Draw.number,
+  ]
+  model_records = SelfPlayChessRecordDAL.query(
+      filters=filters)
+  record = model_records[0].to_chess_record()
+  # records = [r.to_chess_record() for r in model_records]
+  print(f"winner:{record.winner}  movelist:{record.movelist}")
+  print(f"steps count: {len(record.movelist) / 4}")
+  states, values = gen_value_train_data(record)
+  print(f" {len(states)} {len(values)}")
 
 
-test_mcts()
+# %%
+from players.mstc_player import MCTSPlayer
+from utils import show_images_in_slider
+
+policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
+value_net = ValueNet.load_from_checkpoint(ValueCheckPointDir / "version_1.ckpt")
+
+red_player = MCTSPlayer("Red", policy_net, value_net, temperature=1.0)
+black_player = MCTSPlayer("Black", policy_net, value_net, temperature=1.0)
+game = Game(red_player, black_player, evaluate=False, debug=True)
+winner = game.start_play_loop(draw_turns=200)
+movelist = game.movelist
+show_images_in_slider(generate_board_images(movelist, show_last_pos=True))
+# %%
+policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
+value_net = ValueNet.load_from_checkpoint(ValueCheckPointDir / "version_1.ckpt")
+board = Board()
+mcts = MCTS(policy_net, value_net)
+root = mcts.search(board, n_simulations=1000, add_dirichlet=False)
+# policy = mcts.get_policy(root, temperature=self.temperature)
+# %%
+current = [root]
+next = []
+level = 0
+from collections import defaultdict
+levels = defaultdict(int)
+while current:
+  level += 1
+  for node in current:
+    if node.children:
+      levels[level] += 1
+    next.extend(node.children.values())
+  current, next = next, []
+levels
+# %%
+sum([k * v for k, v in levels.items()])
 # %%
