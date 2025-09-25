@@ -3,6 +3,7 @@ from typing import cast
 from _common import *
 from chess import ChessWinner, Game
 from chess.board import Board
+from chess.define import MOVE_TO_INDEX
 from chess.utils import gen_value_train_data, generate_board_images
 from utils.common import WORKSPACE
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord, SelfPlayChessRecordModel
@@ -94,6 +95,23 @@ board = Board()
 mcts = MCTS(policy_net, value_net)
 root = mcts.search(board, n_simulations=1000, add_dirichlet=False)
 # policy = mcts.get_policy(root, temperature=self.temperature)
+# %%
+move_nodes = root.child_stats()
+move_nodes.sort(key=lambda x: x[1].prior, reverse=True)
+# %%
+import torch
+import torch.nn.functional as F
+state = board.to_network_input().unsqueeze(0)  # [1,8,H,W]
+with torch.no_grad():
+  policy_logits = policy_net(state)  # [1,MOVE_SIZE]
+  policy_probs = F.softmax(policy_logits, dim=-1).squeeze(0).cpu()  # [MOVE_SIZE]
+legal_moves = board.available_moves()
+legal_move_indices = [MOVE_TO_INDEX[m] for m in legal_moves]
+legal_policy_probs = policy_probs[legal_move_indices]
+legal_policy_probs = legal_policy_probs / legal_policy_probs.sum()  # 归一化
+move_probs = [(m, float(p.item())) for m, p in zip(legal_moves, legal_policy_probs)]
+move_probs.sort(key=lambda x: x[1], reverse=True)
+
 # %%
 current = [root]
 next = []

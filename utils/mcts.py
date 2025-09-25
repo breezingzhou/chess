@@ -53,6 +53,9 @@ DEFAULT_C_PUCT = 1.4          # PUCT 探索常数
 DEFAULT_DIRICHLET_ALPHA = 0.3  # Dirichlet 噪声 alpha (针对合法走子集合)
 DEFAULT_DIRICHLET_EPS = 0.25  # 根节点混合系数: (1-eps)*P + eps*Dir
 
+# TODO root直接扩展出所有子节点 按需对概率增加噪音
+#
+
 
 @dataclass
 class MCTSNode:
@@ -102,7 +105,7 @@ class MCTS:
           c_puct: float = DEFAULT_C_PUCT,
           dirichlet_alpha: float = DEFAULT_DIRICHLET_ALPHA,
           dirichlet_epsilon: float = DEFAULT_DIRICHLET_EPS,
-          device: str | torch.device = 'cpu'):
+          device: str | torch.device = 'cuda'):
     self.policy_net = policy_net.eval()  # 推理阶段 eval
     self.value_net = value_net.eval()
     self.c_puct = c_puct
