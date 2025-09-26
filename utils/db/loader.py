@@ -60,6 +60,7 @@ def get_policy_train_data(chess_record_num: Optional[int] = None, version: int =
   # version>0 表示从自我对弈获取数据
   if version == 0:
     all_chess_records = get_master_chess_records()
+    all_chess_records = [r for r in all_chess_records if r.winner != ChessWinner.Draw]
     mock_opponent = False
   else:
     all_chess_records = get_selfplay_chess_records(version)

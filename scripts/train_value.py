@@ -31,7 +31,6 @@ class ValueTrain:
   max_epochs: int
   ###
   value_model: ValueNet
-  trainer: L.Trainer | None
 
   def __init__(self, policy_model: PolicyNet, model_version: int, checkpoint_dir=ValueCheckPointDir, train_record_limit: int = 1000, max_epochs=100):
     self.model_version = model_version
@@ -42,7 +41,6 @@ class ValueTrain:
     self.max_epochs = max_epochs
     ###
     self.value_model = self._load_value_model()
-    self.trainer = None
 
   @property
   def _model_name(self) -> str:
