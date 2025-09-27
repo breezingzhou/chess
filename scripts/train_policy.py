@@ -5,7 +5,7 @@ from torch import Tensor
 from torch.utils.data import TensorDataset, DataLoader
 import lightning as L
 import logging
-from typing import cast, Tuple
+from typing import Optional, cast, Tuple
 
 
 from net.policy_net import PolicyNet
@@ -20,13 +20,13 @@ class PolicyTrain:
   max_epochs: int
   ###
 
-  def __init__(self, checkpoint_dir=PolicyCheckPointDir, chess_record_num: int = 0, max_epochs=100):
+  def __init__(self, policy_model: Optional[PolicyNet] = None, checkpoint_dir=PolicyCheckPointDir, chess_record_num: int = 0, max_epochs=100):
     self.chess_record_num = chess_record_num
     self.max_epochs = max_epochs
     self.checkpoint_dir = checkpoint_dir
     self.checkpoint_path = self.checkpoint_dir / f"base.ckpt"
     ###
-    self.policy_model = PolicyNet()
+    self.policy_model = policy_model or PolicyNet()
 
   def _load_train_data(self):
     cache_path = self.checkpoint_dir / f"train_data_cache_{self.chess_record_num}.pt"
@@ -45,6 +45,7 @@ class PolicyTrain:
     return states_tensor, move_probs_tensor
 
   def train_model(self):
+    logging.info(f"开始训练策略网络")
     states_tensor, move_probs_tensor = self._load_train_data()
 
     full_dataset = TensorDataset(states_tensor, move_probs_tensor)
@@ -87,6 +88,8 @@ def test_model(model: PolicyNet):
 
 if __name__ == "__main__":
   setup_logging()
-  trainer = PolicyTrain(chess_record_num=0, max_epochs=100)
+  checkpoint_path = WORKSPACE / "lightning_logs/version_42/checkpoints/epoch=20-step=243012.ckpt"
+  policy_model = PolicyNet.load_from_checkpoint(checkpoint_path)
+  trainer = PolicyTrain(policy_model=policy_model, chess_record_num=0, max_epochs=100)
   trainer.train_model()
 # %%
