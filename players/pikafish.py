@@ -315,6 +315,9 @@ class SimpleEngine:
         self._shutdown = True
         self.protocol.loop.call_soon_threadsafe(_shutdown)
 
+  def __del__(self):
+    self.quit()
+
   @classmethod
   def popen(cls, Protocol: Type[Protocol], command: Union[str, List[str]], *, timeout: Optional[float] = 10.0, debug: Optional[bool] = None, **popen_args: Any) -> "SimpleEngine":
     async def background(future: concurrent.futures.Future[SimpleEngine]) -> None:
