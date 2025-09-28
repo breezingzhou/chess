@@ -23,17 +23,21 @@ class Game:
     self.movelist: str = ""
     self.turns: int = 1
 
+  def _play_one_turn(self):
+    current_player = self.red_player if self.board.current_turn == ChessColor.Red else self.black_player
+    move = current_player.get_move(self.board)
+    if self.debug:
+      print(f"当前回合 {self.turns} 轮到 {self.board.current_turn}方 {current_player.name} 走")
+      print(f"走法: {move} ")
+    self.board.do_move(move)
+    self.movelist += move.to_move_str()
+    self.turns += 1
+    return move
+
   def _start_play_loop(self, draw_turns: int = 200) -> ChessWinner:
     # draw_turns 和棋的最大回合数
     while True:
-      current_player = self.red_player if self.board.current_turn == ChessColor.Red else self.black_player
-      move = current_player.get_move(self.board)
-      if self.debug:
-        print(f"当前回合 {self.turns} 轮到 {self.board.current_turn}方 {current_player.name} 走")
-        print(f"走法: {move} ")
-      self.board.do_move(move)
-      self.movelist += move.to_move_str()
-      self.turns += 1
+      self._play_one_turn()
 
       game_end, winner = self.board.game_end()
       if game_end:
