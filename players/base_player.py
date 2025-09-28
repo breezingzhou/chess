@@ -9,6 +9,10 @@ class BasePlayer:
     # 是否是评估模式 评估模式下记录topk等信息
     self.evaluate = evaluate
 
+  @property
+  def display_name(self) -> str:
+    return f"{self.name}"
+
   def get_move(self, board: Board) -> Move:
     raise NotImplementedError
 

@@ -205,6 +205,20 @@ class Move:
     to_pos = Position(int(move_str[3]), int(move_str[2]))
     return cls(from_pos, to_pos)
 
+  # "c3c4" 表示第一步红方将棋子从62移动到52（兵七进一）
+  # 注意横纵的变化！！
+  @classmethod
+  def from_uci_str(cls, uci_str: str):
+    if len(uci_str) != 4:
+      raise ValueError(f"Invalid move string: {uci_str}")
+    from_x = BOARD_HEIGHT - 1 - int(uci_str[1])
+    to_x = BOARD_HEIGHT - 1 - int(uci_str[3])
+    from_y = ord(uci_str[0]) - ord('a')
+    to_y = ord(uci_str[2]) - ord('a')
+    from_pos = Position(from_x, from_y)
+    to_pos = Position(to_x, to_y)
+    return cls(from_pos, to_pos)
+
   def to_move_str(self) -> str:
     """将移动转换为字符串表示"""
     return f"{self.from_pos.col}{self.from_pos.row}{self.to_pos.col}{self.to_pos.row}"
