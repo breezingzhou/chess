@@ -6,8 +6,8 @@ import logging
 import torch
 from torch import Tensor
 
-from chess import *
-from chess.utils import gen_policy_train_data, gen_value_train_data
+from bz_chess import *
+from bz_chess.utils import gen_policy_train_data, gen_value_train_data
 from utils.common import cal_log_epoch
 from utils.db import MASTER_RES_PATH, SelfPlayChessRecordDAL, SelfPlayChessRecordModel
 

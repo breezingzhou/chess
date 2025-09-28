@@ -1,6 +1,6 @@
 # %%
-from chess.board import Board
-from chess.define import Move
+from bz_chess.board import Board
+from bz_chess.define import Move
 
 
 class BasePlayer:

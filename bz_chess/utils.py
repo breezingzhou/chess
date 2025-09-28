@@ -3,8 +3,8 @@ from pathlib import Path
 from PIL import Image
 from torch import Tensor
 
-from chess.board import Board
-from chess.define import ChessRecord, ChessWinner, Move, MoveTensor, StateTensor, move_to_index_tensor
+from bz_chess.board import Board
+from bz_chess.define import ChessRecord, ChessWinner, Move, MoveTensor, StateTensor, move_to_index_tensor
 
 
 # %%

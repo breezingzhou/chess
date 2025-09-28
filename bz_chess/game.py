@@ -1,7 +1,7 @@
 # %%
 # 两个agent对弈 获取棋谱 胜负关系等
-from chess.board import Board
-from chess.define import ChessColor, ChessWinner, Position, Action, Move
+from bz_chess.board import Board
+from bz_chess.define import ChessColor, ChessWinner, Position, Action, Move
 from players.base_player import BasePlayer
 # %%
 

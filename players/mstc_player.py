@@ -1,7 +1,7 @@
 # %%
 
-from chess.board import Board
-from chess.define import Move
+from bz_chess.board import Board
+from bz_chess.define import Move
 from players.base_player import BasePlayer
 from net.value_net import ValueNet
 from net.policy_net import PolicyNet

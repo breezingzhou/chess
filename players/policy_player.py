@@ -5,8 +5,8 @@ from torch import Tensor
 import torch.nn.functional as F
 
 from .base_player import BasePlayer
-from chess.board import Board
-from chess.define import LEGAL_MOVES, MOVE_TO_INDEX, Move, StateTensor
+from bz_chess.board import Board
+from bz_chess.define import LEGAL_MOVES, MOVE_TO_INDEX, Move, StateTensor
 from net.policy_net import PolicyNet
 # %%
 from dataclasses import dataclass

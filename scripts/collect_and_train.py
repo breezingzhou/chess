@@ -11,7 +11,7 @@ from utils import show_images_in_slider, setup_logging, collect_selfplay_data, W
 from utils.common import split_dataset
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord
 from utils.db.loader import get_policy_train_data, get_selfplay_chess_records
-from chess import ChessRecordData, Game
+from bz_chess import ChessRecordData, Game
 from net.policy_net import PolicyNet
 from players.policy_player import PolicyPlayer
 

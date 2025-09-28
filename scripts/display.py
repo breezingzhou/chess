@@ -4,9 +4,9 @@ import torch
 from _common import *
 
 # 统计各种对局指标
-from chess.board import Board
-from chess.define import ChessColor, ChessWinner
-from chess.utils import generate_board_images, parse_movelist_str
+from bz_chess.board import Board
+from bz_chess.define import ChessColor, ChessWinner
+from bz_chess.utils import generate_board_images, parse_movelist_str
 from net.value_net import ValueNet
 from utils import show_images_in_slider
 from utils.common import ValueCheckPointDir

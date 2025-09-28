@@ -1,10 +1,11 @@
 # %%
-from typing import cast
 from _common import *
-from chess import ChessWinner, Game
-from chess.board import Board
-from chess.define import MOVE_TO_INDEX
-from chess.utils import gen_value_train_data, generate_board_images
+from bz_chess import ChessWinner, Game
+from bz_chess.board import Board
+from bz_chess.define import MOVE_TO_INDEX
+from bz_chess.utils import gen_value_train_data, generate_board_images
+from players.pikafish_player import PikafishPlayer
+from players.policy_player import PolicyPlayer
 from utils.common import WORKSPACE
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord, SelfPlayChessRecordModel
 import polars as pl
@@ -13,6 +14,8 @@ from net.policy_net import PolicyNet
 from net.value_net import ValueNet
 from utils.common import PolicyCheckPointDir, ValueCheckPointDir
 from utils.mcts import MCTS
+from utils.mcts_go import MCTSGo
+from collections import defaultdict
 
 # %%
 res_file = WORKSPACE / "res/selfplay_chess_record_20250920_001945.csv"
@@ -42,7 +45,7 @@ def load_records_from_csv(res_file: Path) -> list[SelfPlayChessRecord]:
 
 # %%
 def test_mcts():
-  from chess.board import Board
+  from bz_chess.board import Board
   from net.policy_net import PolicyNet
   from net.value_net import ValueNet
   from utils.mcts import run_mcts
@@ -76,56 +79,62 @@ def test_gen_value_train_data():
 
 
 # %%
-from players.mstc_player import MCTSPlayer
-from utils import show_images_in_slider
+def test_mctsplayer():
+  from players.mstc_player import MCTSPlayer
+  from utils import show_images_in_slider
 
+  policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
+  value_net = ValueNet.load_from_checkpoint(ValueCheckPointDir / "version_1.ckpt")
+
+  red_player = MCTSPlayer("Red", policy_net, value_net, temperature=1.0)
+  black_player = MCTSPlayer("Black", policy_net, value_net, temperature=1.0)
+  game = Game(red_player, black_player, evaluate=False, debug=True)
+  winner = game.start_play_loop(draw_turns=200)
+  movelist = game.movelist
+  show_images_in_slider(generate_board_images(movelist, show_last_pos=True))
+
+
+# %%
+from utils.mcts import MCTSNode
+
+
+def test_mcts_root():
+  import torch
+  import torch.nn.functional as F
+  policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
+  value_net = ValueNet.load_from_checkpoint(ValueCheckPointDir / "version_1.ckpt")
+  board = Board()
+  mcts = MCTS(policy_net, value_net)
+  root = mcts.search(board, n_simulations=1000, add_dirichlet=False)
+  # policy = mcts.get_policy(root, temperature=self.temperature)
+
+
+def show_root(root: MCTSNode):
+  current = [root]
+  next = []
+  level = 0
+  levels = defaultdict(int)
+  while current:
+    level += 1
+    for node in current:
+      if node.children:
+        levels[level] += 1
+      next.extend(node.children.values())
+    current, next = next, []
+  print(levels)
+
+
+# %%
 policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
-value_net = ValueNet.load_from_checkpoint(ValueCheckPointDir / "version_1.ckpt")
+red_player = PolicyPlayer("Red", policy_net)
+black_player = PikafishPlayer("Black")
 
-red_player = MCTSPlayer("Red", policy_net, value_net, temperature=1.0)
-black_player = MCTSPlayer("Black", policy_net, value_net, temperature=1.0)
-game = Game(red_player, black_player, evaluate=False, debug=True)
-winner = game.start_play_loop(draw_turns=200)
-movelist = game.movelist
-show_images_in_slider(generate_board_images(movelist, show_last_pos=True))
-# %%
-policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
-value_net = ValueNet.load_from_checkpoint(ValueCheckPointDir / "version_1.ckpt")
-board = Board()
-mcts = MCTS(policy_net, value_net)
-root = mcts.search(board, n_simulations=1000, add_dirichlet=False)
-# policy = mcts.get_policy(root, temperature=self.temperature)
-# %%
-move_nodes = root.child_stats()
-move_nodes.sort(key=lambda x: x[1].prior, reverse=True)
-# %%
-import torch
-import torch.nn.functional as F
-state = board.to_network_input().unsqueeze(0)  # [1,8,H,W]
-with torch.no_grad():
-  policy_logits = policy_net(state)  # [1,MOVE_SIZE]
-  policy_probs = F.softmax(policy_logits, dim=-1).squeeze(0).cpu()  # [MOVE_SIZE]
-legal_moves = board.available_moves()
-legal_move_indices = [MOVE_TO_INDEX[m] for m in legal_moves]
-legal_policy_probs = policy_probs[legal_move_indices]
-legal_policy_probs = legal_policy_probs / legal_policy_probs.sum()  # 归一化
-move_probs = [(m, float(p.item())) for m, p in zip(legal_moves, legal_policy_probs)]
-move_probs.sort(key=lambda x: x[1], reverse=True)
-
-# %%
-current = [root]
-next = []
-level = 0
-from collections import defaultdict
-levels = defaultdict(int)
-while current:
-  level += 1
-  for node in current:
-    if node.children:
-      levels[level] += 1
-    next.extend(node.children.values())
-  current, next = next, []
-levels
-# %%
-sum([k * v for k, v in levels.items()])
+game = Game(red_player, black_player, evaluate=True, debug=True)
+game.board.to_image().show()
+move = game._play_one_turn()
+print(f"move: {move}")
+game.board.to_image().show()
+move = game._play_one_turn()
+print(f"move: {move}")
+game.board.to_image().show()
 # %%

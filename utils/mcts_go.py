@@ -37,8 +37,8 @@ import random
 import torch
 import torch.nn.functional as F
 
-from chess.board import Board
-from chess.define import Move, MOVE_TO_INDEX, MOVE_SIZE, ChessWinner
+from bz_chess.board import Board
+from bz_chess.define import Move, MOVE_TO_INDEX, MOVE_SIZE, ChessWinner
 from net.policy_net import PolicyNet
 from net.value_net import ValueNet
 

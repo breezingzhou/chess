@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-from chess.define import BOARD_HEIGHT, BOARD_WIDTH, N_FEATURES
+from bz_chess.define import BOARD_HEIGHT, BOARD_WIDTH, N_FEATURES
 from net.res_block import ResBlock
 # %%
 

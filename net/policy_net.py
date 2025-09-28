@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 
-from chess.define import BOARD_HEIGHT, BOARD_WIDTH, MOVE_SIZE
+from bz_chess.define import BOARD_HEIGHT, BOARD_WIDTH, MOVE_SIZE
 from net.res_block import ResBlock
 # %%
 

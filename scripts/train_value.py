@@ -11,7 +11,7 @@ import logging
 import lightning as L
 from torch.utils.data import TensorDataset, DataLoader
 
-from chess.board import Board
+from bz_chess.board import Board
 from net.policy_net import PolicyNet
 from net.value_net import ValueNet
 from players.policy_player import PolicyPlayer

@@ -6,7 +6,7 @@ from sqlalchemy import Column, Integer, String, Text, TIMESTAMP
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped
 
-from chess.define import ChessRecord, ChessRecordData, ChessWinner
+from bz_chess.define import ChessRecord, ChessRecordData, ChessWinner
 from utils.db.common import BaseDAL, BaseModel, get_session
 
 

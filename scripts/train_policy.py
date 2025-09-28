@@ -64,8 +64,8 @@ class PolicyTrain:
 
 
 # %%
-from chess.board import Board
-from chess.define import LEGAL_MOVES
+from bz_chess.board import Board
+from bz_chess.define import LEGAL_MOVES
 
 
 def test_model(model: PolicyNet):

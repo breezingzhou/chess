@@ -3,7 +3,7 @@ from ipywidgets import interact, IntSlider
 from PIL import Image
 from IPython.display import display
 
-from chess.utils import generate_board_images
+from bz_chess.utils import generate_board_images
 from utils.db.loader import get_master_chess_records
 
 

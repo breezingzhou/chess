@@ -6,8 +6,8 @@ from typing import Union
 import numpy as np
 import copy
 
-from chess.define import Move
-from chess.board import Board
+from bz_chess.define import Move
+from bz_chess.board import Board
 from config import CONFIG
 
 

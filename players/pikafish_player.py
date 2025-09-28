@@ -1,6 +1,6 @@
 # %%
-from chess.board import Board
-from chess.define import Move
+from bz_chess.board import Board
+from bz_chess.define import Move
 from players.base_player import BasePlayer
 from pikafish import get_pikafish_engine
 # %%

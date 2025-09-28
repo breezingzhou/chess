@@ -1,7 +1,7 @@
 # %%
 
 import logging
-from chess import Game
+from bz_chess import Game
 from players.policy_player import PolicyPlayer
 from utils.common import cal_log_epoch
 from utils.db import SelfPlayChessRecord, SelfPlayChessRecordDAL
