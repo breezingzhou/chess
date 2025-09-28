@@ -18,3 +18,5 @@ res/大师对局.csv
 res/*.csv
 res/checkpoints
 ./scripts/test.py
+res/pikafish.exe
+res/pikafish.nnue
