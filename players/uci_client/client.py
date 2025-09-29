@@ -59,11 +59,13 @@ class UciClient:
       future = asyncio.run_coroutine_threadsafe(coro, self.protocol.loop)
     return future.result()
 
-  def bestmove(self, fen: str) -> Optional[str]:
+  def bestmove(self, fen: str) -> str:
     with self._not_shut_down():
       coro = asyncio.wait_for(self.protocol.bestmove(fen), self.timeout)
       future = asyncio.run_coroutine_threadsafe(coro, self.protocol.loop)
-    return future.result()
+    bset_move_str = future.result()
+    assert bset_move_str is not None
+    return bset_move_str
 
   def configure(self, options: ConfigMapping) -> None:
     with self._not_shut_down():

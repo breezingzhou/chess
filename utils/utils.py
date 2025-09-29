@@ -20,7 +20,7 @@ from datetime import datetime
 from .common import WORKSPACE
 
 
-def setup_logging(level=logging.INFO) -> None:
+def setup_logging(level=logging.DEBUG) -> None:
   log_dir = WORKSPACE / "logs"
   log_dir.mkdir(parents=True, exist_ok=True)
   log_filename = f"{log_dir}/{datetime.now().strftime('%Y%m%d')}.log"
