@@ -1,4 +1,17 @@
-from .common import WORKSPACE
-from .display import show_images_in_slider
+from .common import WORKSPACE, CheckPointDir, PolicyCheckPointDir, ValueCheckPointDir, \
+    cal_log_epoch, split_dataset
+from .display import show_images_in_slider, display_movelist
 from .utils import setup_logging, timer
-from .self_play import collect_selfplay_data
+
+__all__ = [
+    "WORKSPACE",
+    "CheckPointDir",
+    "PolicyCheckPointDir",
+    "ValueCheckPointDir",
+    "cal_log_epoch",
+    "split_dataset",
+    "show_images_in_slider",
+    "display_movelist",
+    "setup_logging",
+    "timer",
+]

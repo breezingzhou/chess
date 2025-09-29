@@ -7,7 +7,8 @@ import lightning as L
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
-from utils import show_images_in_slider, setup_logging, collect_selfplay_data, WORKSPACE
+from utils import show_images_in_slider, setup_logging, WORKSPACE
+from utils.self_play import collect_selfplay_data
 from utils.common import split_dataset
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord
 from utils.db.loader import get_policy_train_data, get_selfplay_chess_records

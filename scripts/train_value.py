@@ -15,10 +15,10 @@ from bz_chess.board import Board
 from net.policy_net import PolicyNet
 from net.value_net import ValueNet
 from players.policy_player import PolicyPlayer
-from utils import setup_logging, collect_selfplay_data, WORKSPACE
+from utils import setup_logging, WORKSPACE
 from utils.common import ValueCheckPointDir, split_dataset
 from utils.db.loader import get_value_train_chess_records, get_value_train_data
-
+from utils.self_play import collect_selfplay_data
 # %%
 
 

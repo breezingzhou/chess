@@ -6,8 +6,8 @@ from IPython.display import display
 from bz_chess.utils import generate_board_images
 from utils.db.loader import get_master_chess_records
 
-
 # %%
+
 
 def show_images_in_slider(images):
   """在滑块中显示所有图片"""
@@ -36,12 +36,9 @@ def show_images_in_slider(images):
 # %%
 
 
-def test_replay_chess_record():
-  chess_records = get_master_chess_records()
-  movelist_str = chess_records[0].movelist
+def display_movelist(movelist_str: str):
   images = generate_board_images(movelist_str)
   show_images_in_slider(images)
 
 
-# test_replay_chess_record()
 # %%
