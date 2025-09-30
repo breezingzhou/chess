@@ -2,13 +2,17 @@
 from _common import *
 from bz_chess import ChessWinner, Game
 from bz_chess.board import Board
-from bz_chess.define import MOVE_TO_INDEX
+from bz_chess.define import MOVE_TO_INDEX, Move
 from bz_chess.utils import gen_value_train_data, generate_board_images
+from players.pikafish import get_pikafish_engine
 from players.pikafish_player import PikafishPlayer
 from players.policy_player import PolicyPlayer
+from players.uci_client import get_pikafish_client
 from utils.common import WORKSPACE
 from utils.db import SelfPlayChessRecordDAL, SelfPlayChessRecord, SelfPlayChessRecordModel
 import polars as pl
+
+from utils.display import display_movelist
 
 from net.policy_net import PolicyNet
 from net.value_net import ValueNet
@@ -16,13 +20,17 @@ from utils.common import PolicyCheckPointDir, ValueCheckPointDir
 from utils.mcts import MCTS
 from utils.mcts_go import MCTSGo
 from collections import defaultdict
+from utils import setup_logging
 
 # %%
-res_file = WORKSPACE / "res/selfplay_chess_record_20250920_001945.csv"
+setup_logging()
+
 # %%
 
 
-def load_records_from_csv(res_file: Path) -> list[SelfPlayChessRecord]:
+def load_records_from_csv() -> list[SelfPlayChessRecord]:
+  res_file = WORKSPACE / "res/selfplay_chess_record_20250920_001945.csv"
+
   df = pl.read_csv(res_file, schema_overrides={"movelist": pl.String})
   records: list[SelfPlayChessRecord] = []
   for row in df.iter_rows(named=True):
@@ -125,16 +133,48 @@ def show_root(root: MCTSNode):
 
 
 # %%
-policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
-red_player = PolicyPlayer("Red", policy_net)
-black_player = PikafishPlayer("Black")
 
-game = Game(red_player, black_player, evaluate=True, debug=True)
-game.board.to_image().show()
-move = game._play_one_turn()
-print(f"move: {move}")
-game.board.to_image().show()
-move = game._play_one_turn()
-print(f"move: {move}")
-game.board.to_image().show()
+def test_pikafish_player():
+  # TODO pikafish 还有点小问题  多次调用 bestmove 会报错
+  policy_net = PolicyNet.load_from_checkpoint(PolicyCheckPointDir / "version_5.ckpt")
+  red_player = PolicyPlayer("Red", policy_net)
+  black_player = PikafishPlayer("Black")
+
+  game = Game(red_player, black_player, evaluate=True, debug=True)
+  winner = game.start_play_loop(draw_turns=100)
+  print(f"winner: {winner}  movelist:{game.movelist}")
+  # game.board.to_image().show()
+  # for i in range(5):
+  #   move = game._play_one_turn()
+  #   print(f"move: {move}")
+  #   game.board.to_image().show()
+
+
+test_pikafish_player()
 # %%
+
+
+def test_pikafish_client_v2():
+  client = get_pikafish_client()
+  board = Board()
+  for i in range(5):
+    move_str = client.bestmove(board.to_fen())
+    move = Move.from_uci_str(move_str)
+    print(f"{board.current_turn}: {move}")
+    board.do_move(move)
+# %%
+
+
+def test_pikafish_client():
+  from players.uci_client import UciProtocol, UciClient
+
+  pikapath = WORKSPACE / "res/pikafish.exe"
+  client = UciClient.popen(str(pikapath))
+  board = Board()
+  move_str = client.bestmove(board.to_fen())
+  move = Move.from_uci_str(move_str)
+  board.do_move(move)
+  board.to_image(last_pos=move.from_pos)
+  command = f"position fen {board.to_fen()}"
+  client.protocol.send_line(command)
+  client.quit()

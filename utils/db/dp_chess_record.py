@@ -70,3 +70,7 @@ class _DPChessRecordDAL(BaseDAL[DPChessRecordModel]):
           movelist=obj.movelist,
           chess_no=obj.id,
       )
+
+
+# %%
+DPChessRecordDAL = _DPChessRecordDAL()

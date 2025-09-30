@@ -79,3 +79,7 @@ class _SelfPlayChessRecordDAL(BaseDAL[SelfPlayChessRecordModel]):
           created_at=obj.created_at
       )
       return record
+
+
+# %%
+SelfPlayChessRecordDAL = _SelfPlayChessRecordDAL()

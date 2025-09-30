@@ -9,7 +9,8 @@ from torch import Tensor
 from bz_chess import *
 from bz_chess.utils import gen_policy_train_data, gen_value_train_data
 from utils.common import cal_log_epoch
-from utils.db import MASTER_RES_PATH, SelfPlayChessRecordDAL, SelfPlayChessRecordModel
+from utils.db.common import MASTER_RES_PATH
+from utils.db.selfplay_chess_record import SelfPlayChessRecordModel, SelfPlayChessRecordDAL
 
 # %%
 

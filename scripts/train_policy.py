@@ -88,8 +88,8 @@ def test_model(model: PolicyNet):
 
 if __name__ == "__main__":
   setup_logging()
-  checkpoint_path = WORKSPACE / "lightning_logs/version_42/checkpoints/epoch=20-step=243012.ckpt"
+  checkpoint_path = WORKSPACE / "lightning_logs/version_43/checkpoints/epoch=24-step=289300.ckpt"
   policy_model = PolicyNet.load_from_checkpoint(checkpoint_path)
-  trainer = PolicyTrain(policy_model=policy_model, chess_record_num=0, max_epochs=100)
+  trainer = PolicyTrain(policy_model=policy_model, chess_record_num=0, max_epochs=80)
   trainer.train_model()
 # %%
